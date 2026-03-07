@@ -1,0 +1,411 @@
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+            ARIMA ANALYSIS - UK BANKING STOCKS (NEXT-DAY WALK-FORWARD + 5-DAY FORECAST)             
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  Data window : 2021-02-28  →  2026-02-28  (5 calendar years, 80/20 split)
+  Split       : 80% train / 20% test  |  Val window: 63 obs
+  Walk-forward refit frequency: every 63 trading days (1 quarter)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+[DATA] Loading all tickers via data_loader...
+
+[data_loader] Downloading BARC.L (1/3)...
+   ✓ BARC.L: 1305 observations (2021-03-01 → 2026-02-27)
+[data_loader] Downloading LLOY.L (2/3)...
+   ✓ LLOY.L: 1305 observations (2021-03-01 → 2026-02-27)
+[data_loader] Downloading HSBA.L (3/3)...
+   ✓ HSBA.L: 1305 observations (2021-03-01 → 2026-02-27)
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══════════════════════════════════════   PROCESSING: BARC.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+[DATA] Data loaded for BARC.L...
+
+   Data Preview (first 5 / last 5 rows):
+    Date           Open     High      Low    Close    Adj Close        Volume
+--  ----------  -------  -------  -------  -------  -----------  ------------
+ 0  2021-03-01  162.000  164.280  160.280  161.340      161.057  47114977.000
+ 1  2021-03-02  160.680  164.040  159.740  162.220      161.935  31296043.000
+ 2  2021-03-03  163.780  170.340  111.827  170.340      170.041  86451554.000
+ 3  2021-03-04  170.940  171.180  165.620  166.660      166.367  43262872.000
+ 4  2021-03-05  166.060  176.180  164.660  171.580      171.279  92300565.000
+ 5  2026-02-23  476.500  481.600  461.200  463.000      463.000  52117956.000
+ 6  2026-02-24  461.800  462.050  451.100  459.950      459.950  40643463.000
+ 7  2026-02-25  462.100  470.350  462.100  470.350      470.350  62717186.000
+ 8  2026-02-26  469.250  475.050  466.150  472.650      472.650  33176881.000
+ 9  2026-02-27  454.600  471.350  447.850  452.850      452.850  97142602.000
+   Total observations: 1305
+   Date range: 2021-03-01 → 2026-02-27
+
+[SPLIT] Preprocessing data and applying train/test split...
+   Stationarity test: d=0,  ADF p-value=0.000000
+   (Log returns are typically stationary at d=0)
+   Train : 1043 obs  (2021-03-02 → 2025-02-27)
+   Test  : 261 obs  (2025-02-28 → 2026-02-27)
+   Ratio : 0.7998 / 0.2002
+
+[SEARCH] Running grid search for optimal ARIMA configuration...
+   Testing 160 combinations sequentially...
+   Validation window: 63 obs (2024-12-03 → 2025-02-27)
+   - Grid search complete: 160 valid configurations
+   - Saved: BARC.L_grid_search_arima.csv
+
+   Top 5 Configurations by Validation MAPE:
+Order    Trend      Window    Val_MAPE
+-------  -------  --------  ----------
+(0,0,1)  c             126    0.013093
+(0,0,2)  c             126    0.013185
+(2,0,1)  c             126    0.013194
+(2,0,0)  c             126    0.013208
+(0,0,1)  n             126    0.013216
+
+[MODEL] Training final model with best configuration...
+   Best model: ARIMA(0, 0, 1),  Trend=c,  Window=126
+   Validation MAPE: 0.013093
+   - Saved: BARC.L_best_hyperparameters.csv
+
+[WALK-FORWARD] Running walk-forward validation (refit every 63 days)...
+   Progress: 50/261 predictions... (skipped: 0)
+   Progress: 100/261 predictions... (skipped: 0)
+   Progress: 150/261 predictions... (skipped: 0)
+   Progress: 200/261 predictions... (skipped: 0)
+   Progress: 250/261 predictions... (skipped: 0)
+   - Walk-forward complete: 261 next-day predictions with 95% CIs
+
+[METRICS] Calculating performance metrics...
+
+   Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
+   ──────────────────────────────────────────────────
+   MAPE:                    1.4185%
+   RMSE:                    6.9836
+   MAE:                     5.1287
+   OOS RMSE (log-return):   0.019971  ← scale-free, comparable across tickers
+   Directional Accuracy:    45.77%
+
+   Uncertainty Metrics (95% CI — analytical, from model parameter uncertainty):
+   NOTE: RF/GRU use empirical residual-std intervals; comparison is indicative only.
+   ──────────────────────────────────────────────────
+   Avg Interval Width:         28.6072 GBX
+   Coverage Rate:              92.72%
+   Mean Actual Price (test):   375.6932 GBX
+   Winkler Score (95%, raw):   43.7199  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, norm):  0.116371  ← price-scaled, valid cross-ticker comparison
+
+   Diebold-Mariano Test (vs Naive Random Walk):
+   ──────────────────────────────────────────────────
+   DM Statistic:            0.6686
+   p-value:                 0.5037
+   Result (α=0.05):         Not significant
+   Note: Positive DM stat → model errors larger than naive (RW outperforms)
+   - Saved: BARC.L_diebold_mariano.csv
+
+[PLOTS & FORECAST] Generating diagnostic plots and 5-day forecast...
+   - Saved: BARC.L_ARIMA_predictions.png
+   - Saved: BARC.L_ARIMA_residual_acf.png
+
+   Next 5 Trading Days Forecast:
+   ────────────────────────────────────────────────────────────────────────────────
+   Last Actual Price (2026-02-27): 452.850 GBP
+   Weighted Avg Forecast: 454.196 GBP (50%-20%-10%-10%-10%)
+   ────────────────────────────────────────────────────────────────────────────────
+   Day 1 (2026-03-02) [Weight: 50%]:
+      Forecast:  453.395 GBP  UP ▲
+      95% CI:    [436.899, 470.514] GBP
+   Day 2 (2026-03-03) [Weight: 20%]:
+      Forecast:  454.122 GBP  UP ▲
+      95% CI:    [430.933, 478.558] GBP
+   Day 3 (2026-03-04) [Weight: 10%]:
+      Forecast:  454.850 GBP  UP ▲
+      95% CI:    [426.569, 485.005] GBP
+   Day 4 (2026-03-05) [Weight: 10%]:
+      Forecast:  455.579 GBP  UP ▲
+      95% CI:    [423.031, 490.631] GBP
+   Day 5 (2026-03-06) [Weight: 10%]:
+      Forecast:  456.309 GBP  UP ▲
+      95% CI:    [420.019, 495.736] GBP
+
+   - Saved: BARC.L_5day_forecast.csv
+   - Saved: BARC.L_ARIMA_30day_history_5day_forecast.png
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+═════════════════════════════════════   - COMPLETED: BARC.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══════════════════════════════════════   PROCESSING: LLOY.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+[DATA] Data loaded for LLOY.L...
+
+   Data Preview (first 5 / last 5 rows):
+    Date           Open     High      Low    Close    Adj Close         Volume
+--  ----------  -------  -------  -------  -------  -----------  -------------
+ 0  2021-03-01   39.595   39.720   38.990   39.005       38.916  162494230.000
+ 1  2021-03-02   38.775   39.270   38.685   38.880       38.791  158880732.000
+ 2  2021-03-03   39.250   40.465   39.060   40.415       40.323  303428714.000
+ 3  2021-03-04   40.260   40.970   39.875   40.345       40.253  270262448.000
+ 4  2021-03-05   40.025   41.462   39.670   40.075       39.984  311713141.000
+ 5  2026-02-23  104.800  105.900  102.800  103.800      103.800  136108917.000
+ 6  2026-02-24  103.800  103.850  101.000  102.600      102.600  240678629.000
+ 7  2026-02-25  103.600  104.555  102.550  104.500      104.500  394306624.000
+ 8  2026-02-26  104.850  105.171  103.700  104.900      104.900  158508762.000
+ 9  2026-02-27  104.500  105.100  101.700  102.450      102.450  206585507.000
+   Total observations: 1305
+   Date range: 2021-03-01 → 2026-02-27
+
+[SPLIT] Preprocessing data and applying train/test split...
+   Stationarity test: d=0,  ADF p-value=0.000000
+   (Log returns are typically stationary at d=0)
+   Train : 1043 obs  (2021-03-02 → 2025-02-27)
+   Test  : 261 obs  (2025-02-28 → 2026-02-27)
+   Ratio : 0.7998 / 0.2002
+
+[SEARCH] Running grid search for optimal ARIMA configuration...
+   Testing 160 combinations sequentially...
+   Validation window: 63 obs (2024-12-03 → 2025-02-27)
+   - Grid search complete: 160 valid configurations
+   - Saved: LLOY.L_grid_search_arima.csv
+
+   Top 5 Configurations by Validation MAPE:
+Order    Trend      Window    Val_MAPE
+-------  -------  --------  ----------
+(2,0,1)  c             252    0.010802
+(2,0,0)  c             252    0.010819
+(1,0,2)  c             252    0.010819
+(2,0,2)  c             252    0.010825
+(1,0,3)  c             252    0.010844
+
+[MODEL] Training final model with best configuration...
+   Best model: ARIMA(2, 0, 1),  Trend=c,  Window=252
+   Validation MAPE: 0.010802
+   - Saved: LLOY.L_best_hyperparameters.csv
+
+[WALK-FORWARD] Running walk-forward validation (refit every 63 days)...
+   Progress: 50/261 predictions... (skipped: 0)
+   Progress: 100/261 predictions... (skipped: 0)
+   Progress: 150/261 predictions... (skipped: 0)
+   Progress: 200/261 predictions... (skipped: 0)
+   Progress: 250/261 predictions... (skipped: 0)
+   - Walk-forward complete: 261 next-day predictions with 95% CIs
+
+[METRICS] Calculating performance metrics...
+
+   Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
+   ──────────────────────────────────────────────────
+   MAPE:                    1.1529%
+   RMSE:                    1.3459
+   MAE:                     0.9588
+   OOS RMSE (log-return):   0.016222  ← scale-free, comparable across tickers
+   Directional Accuracy:    44.23%
+
+   Uncertainty Metrics (95% CI — analytical, from model parameter uncertainty):
+   NOTE: RF/GRU use empirical residual-std intervals; comparison is indicative only.
+   ──────────────────────────────────────────────────
+   Avg Interval Width:         5.2648 GBX
+   Coverage Rate:              93.87%
+   Mean Actual Price (test):   84.2296 GBX
+   Winkler Score (95%, raw):   7.6466  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, norm):  0.090783  ← price-scaled, valid cross-ticker comparison
+
+   Diebold-Mariano Test (vs Naive Random Walk):
+   ──────────────────────────────────────────────────
+   DM Statistic:            1.1614
+   p-value:                 0.2455
+   Result (α=0.05):         Not significant
+   Note: Positive DM stat → model errors larger than naive (RW outperforms)
+   - Saved: LLOY.L_diebold_mariano.csv
+
+[PLOTS & FORECAST] Generating diagnostic plots and 5-day forecast...
+   - Saved: LLOY.L_ARIMA_predictions.png
+   - Saved: LLOY.L_ARIMA_residual_acf.png
+
+   Next 5 Trading Days Forecast:
+   ────────────────────────────────────────────────────────────────────────────────
+   Last Actual Price (2026-02-27): 102.450 GBP
+   Weighted Avg Forecast: 102.539 GBP (50%-20%-10%-10%-10%)
+   ────────────────────────────────────────────────────────────────────────────────
+   Day 1 (2026-03-02) [Weight: 50%]:
+      Forecast:  102.383 GBP  DOWN ▼
+      95% CI:    [99.086, 105.790] GBP
+   Day 2 (2026-03-03) [Weight: 20%]:
+      Forecast:  102.535 GBP  UP ▲
+      95% CI:    [97.897, 107.394] GBP
+   Day 3 (2026-03-04) [Weight: 10%]:
+      Forecast:  102.662 GBP  UP ▲
+      95% CI:    [97.004, 108.651] GBP
+   Day 4 (2026-03-05) [Weight: 10%]:
+      Forecast:  102.800 GBP  UP ▲
+      95% CI:    [96.285, 109.755] GBP
+   Day 5 (2026-03-06) [Weight: 10%]:
+      Forecast:  102.939 GBP  UP ▲
+      95% CI:    [95.673, 110.756] GBP
+
+   - Saved: LLOY.L_5day_forecast.csv
+   - Saved: LLOY.L_ARIMA_30day_history_5day_forecast.png
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+═════════════════════════════════════   - COMPLETED: LLOY.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══════════════════════════════════════   PROCESSING: HSBA.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+[DATA] Data loaded for HSBA.L...
+
+   Data Preview (first 5 / last 5 rows):
+    Date            Open      High       Low     Close    Adj Close        Volume
+--  ----------  --------  --------  --------  --------  -----------  ------------
+ 0  2021-03-01   426.100   429.740   419.100   420.150      418.904  22514919.000
+ 1  2021-03-02   418.300   428.750   417.700   423.750      422.493  33604121.000
+ 2  2021-03-03   425.550   435.000   425.550   432.900      431.616  25977899.000
+ 3  2021-03-04   430.250   431.600   424.600   426.500      425.235  23702449.000
+ 4  2021-03-05   427.650   445.000   424.300   437.600      436.302  28806313.000
+ 5  2026-02-23  1286.600  1314.000  1285.800  1292.800     1292.800   9618406.000
+ 6  2026-02-24  1289.600  1293.000  1274.400  1291.400     1291.400  20025816.000
+ 7  2026-02-25  1343.400  1394.000  1335.400  1394.000     1394.000  58506858.000
+ 8  2026-02-26  1372.000  1398.000  1363.800  1398.000     1398.000  16771249.000
+ 9  2026-02-27  1402.600  1410.600  1377.400  1393.600     1393.600  28617024.000
+   Total observations: 1305
+   Date range: 2021-03-01 → 2026-02-27
+
+[SPLIT] Preprocessing data and applying train/test split...
+   Stationarity test: d=0,  ADF p-value=0.000000
+   (Log returns are typically stationary at d=0)
+   Train : 1043 obs  (2021-03-02 → 2025-02-27)
+   Test  : 261 obs  (2025-02-28 → 2026-02-27)
+   Ratio : 0.7998 / 0.2002
+
+[SEARCH] Running grid search for optimal ARIMA configuration...
+   Testing 160 combinations sequentially...
+   Validation window: 63 obs (2024-12-03 → 2025-02-27)
+   - Grid search complete: 160 valid configurations
+   - Saved: HSBA.L_grid_search_arima.csv
+
+   Top 5 Configurations by Validation MAPE:
+Order    Trend      Window    Val_MAPE
+-------  -------  --------  ----------
+(2,0,3)  c              63    0.007316
+(1,0,1)  c              21    0.007342
+(3,0,0)  c              63    0.007406
+(1,0,1)  c              63    0.007446
+(3,0,2)  c              63    0.007482
+
+[MODEL] Training final model with best configuration...
+   Best model: ARIMA(2, 0, 3),  Trend=c,  Window=63
+   Validation MAPE: 0.007316
+   - Saved: HSBA.L_best_hyperparameters.csv
+
+[WALK-FORWARD] Running walk-forward validation (refit every 63 days)...
+   Progress: 50/261 predictions... (skipped: 0)
+   Progress: 100/261 predictions... (skipped: 0)
+   Progress: 150/261 predictions... (skipped: 0)
+   Progress: 200/261 predictions... (skipped: 0)
+   Progress: 250/261 predictions... (skipped: 0)
+   - Walk-forward complete: 261 next-day predictions with 95% CIs
+
+[METRICS] Calculating performance metrics...
+
+   Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
+   ──────────────────────────────────────────────────
+   MAPE:                    1.1507%
+   RMSE:                    16.2580
+   MAE:                     11.4981
+   OOS RMSE (log-return):   0.016341  ← scale-free, comparable across tickers
+   Directional Accuracy:    50.77%
+
+   Uncertainty Metrics (95% CI — analytical, from model parameter uncertainty):
+   NOTE: RF/GRU use empirical residual-std intervals; comparison is indicative only.
+   ──────────────────────────────────────────────────
+   Avg Interval Width:         51.5345 GBX
+   Coverage Rate:              85.82%
+   Mean Actual Price (test):   1002.1353 GBX
+   Winkler Score (95%, raw):   121.0026  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, norm):  0.120745  ← price-scaled, valid cross-ticker comparison
+
+   Diebold-Mariano Test (vs Naive Random Walk):
+   ──────────────────────────────────────────────────
+   DM Statistic:            0.7199
+   p-value:                 0.4716
+   Result (α=0.05):         Not significant
+   Note: Positive DM stat → model errors larger than naive (RW outperforms)
+   - Saved: HSBA.L_diebold_mariano.csv
+
+[PLOTS & FORECAST] Generating diagnostic plots and 5-day forecast...
+   - Saved: HSBA.L_ARIMA_predictions.png
+   - Saved: HSBA.L_ARIMA_residual_acf.png
+
+   Next 5 Trading Days Forecast:
+   ────────────────────────────────────────────────────────────────────────────────
+   Last Actual Price (2026-02-27): 1393.600 GBP
+   Weighted Avg Forecast: 1415.233 GBP (50%-20%-10%-10%-10%)
+   ────────────────────────────────────────────────────────────────────────────────
+   Day 1 (2026-03-02) [Weight: 50%]:
+      Forecast:  1406.828 GBP  UP ▲
+      95% CI:    [1366.078, 1448.794] GBP
+   Day 2 (2026-03-03) [Weight: 20%]:
+      Forecast:  1422.805 GBP  UP ▲
+      95% CI:    [1364.872, 1483.196] GBP
+   Day 3 (2026-03-04) [Weight: 10%]:
+      Forecast:  1427.685 GBP  UP ▲
+      95% CI:    [1356.818, 1502.253] GBP
+   Day 4 (2026-03-05) [Weight: 10%]:
+      Forecast:  1423.590 GBP  UP ▲
+      95% CI:    [1342.313, 1509.788] GBP
+   Day 5 (2026-03-06) [Weight: 10%]:
+      Forecast:  1421.308 GBP  UP ▲
+      95% CI:    [1330.894, 1517.865] GBP
+
+   - Saved: HSBA.L_5day_forecast.csv
+   - Saved: HSBA.L_ARIMA_30day_history_5day_forecast.png
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+═════════════════════════════════════   - COMPLETED: HSBA.L   ══════════════════════════════════════
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+                                 ARIMA MODEL - PERFORMANCE SUMMARY                                  
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
++----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
+| Ticker   | Model   | Order     | Trend   |   Window | Val_MAPE   | OOS_MAPE   |   OOS_RMSE_LogRet |    RMSE |     MAE | Dir_Accuracy   |      AIC | Refit_Freq    | Test_Start   | Test_End   |   Test_Obs |
++==========+=========+===========+=========+==========+============+============+===================+=========+=========+================+==========+===============+==============+============+============+
+| BARC.L   | ARIMA   | (0, 0, 1) | c       |      126 | 1.3093%    | 1.4185%    |          0.019971 |  6.9836 |  5.1287 | 45.77%         |  -657.35 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
++----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
+| LLOY.L   | ARIMA   | (2, 0, 1) | c       |      252 | 1.0802%    | 1.1529%    |          0.016222 |  1.3459 |  0.9588 | 44.23%         | -1402.46 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
++----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
+| HSBA.L   | ARIMA   | (2, 0, 3) | c       |       63 | 0.7316%    | 1.1507%    |          0.016341 | 16.258  | 11.4981 | 50.77%         |  -404.91 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
++----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
+
+- Saved: ARIMA_performance_summary.csv
+
+Uncertainty Quantification Summary:
++----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
+| Ticker   | Model   |   Avg_Interval_Width |   Coverage_Rate_% |   Mean_Actual_Price |   Winkler_Score_Raw |   Winkler_Score_Norm |   Dir_Accuracy_% | CI_Method          |
++==========+=========+======================+===================+=====================+=====================+======================+==================+====================+
+| BARC.L   | ARIMA   |              28.6072 |           92.7203 |            375.6932 |             43.7199 |               0.1164 |          45.7692 | Analytical (ARIMA) |
++----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
+| LLOY.L   | ARIMA   |               5.2648 |           93.8697 |             84.2296 |              7.6466 |               0.0908 |          44.2308 | Analytical (ARIMA) |
++----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
+| HSBA.L   | ARIMA   |              51.5345 |           85.8238 |           1002.1353 |            121.0026 |               0.1207 |          50.7692 | Analytical (ARIMA) |
++----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
+
+- Saved: ARIMA_uncertainty_metrics.csv
+
+5-Day Price Forecasts with 95% CI:
++----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
+| Ticker   |   Last Actual |    Day 1 |    Day 5 |   Weighted Avg | Trend   | Day 1 CI             | Day 5 CI             |
++==========+===============+==========+==========+================+=========+======================+======================+
+| BARC.L   |        452.85 |  453.395 |  456.309 |        454.196 | UP ▲    | [436.899, 470.514]   | [420.019, 495.736]   |
++----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
+| LLOY.L   |        102.45 |  102.383 |  102.939 |        102.539 | UP ▲    | [99.086, 105.790]    | [95.673, 110.756]    |
++----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
+| HSBA.L   |       1393.6  | 1406.83  | 1421.31  |       1415.23  | UP ▲    | [1366.078, 1448.794] | [1330.894, 1517.865] |
++----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
+
+- Saved: ARIMA_5day_forecasts_summary.csv

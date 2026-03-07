@@ -1,0 +1,16 @@
+Feature,Importance,Ticker,Model
+Volume,0.0,LLOY.L,RF
+Ret_Lag_1,0.0,LLOY.L,RF
+Ret_Lag_2,0.0,LLOY.L,RF
+Ret_Lag_3,0.0,LLOY.L,RF
+Ret_Lag_5,0.0,LLOY.L,RF
+SMA_5,0.0,LLOY.L,RF
+SMA_20,0.0,LLOY.L,RF
+SMA_Ratio,0.0,LLOY.L,RF
+RSI,0.0,LLOY.L,RF
+BB_Width,0.0,LLOY.L,RF
+Volatility,0.0,LLOY.L,RF
+Volume_MA,0.0,LLOY.L,RF
+Volume_Ratio,0.0,LLOY.L,RF
+ATR_14,0.0,LLOY.L,RF
+ATR_20,0.0,LLOY.L,RF

@@ -1,0 +1,2 @@
+Ticker,Model,DM_Statistic,DM_pValue,Significant_005
+HSBA.L,GRU_LB:21|U:64|L:1|DR:0.5|LR:0.001|BS:32,-0.8165097039067598,0.41420867575395537,Not significant

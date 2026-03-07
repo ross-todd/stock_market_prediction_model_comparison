@@ -1,0 +1,4 @@
+Ticker,Model,Val_RMSE_LogRet,OOS_RMSE_LogRet,OOS_MAPE,RMSE,MAE,Dir_Accuracy,Best_Config,Refit_Freq,Test_Start,Test_End,Test_Obs
+BARC.L,GRU,0.101931,0.019725,1.3996%,7.0439,5.1079,43.75%,lb=21|units=64|layers=2|dropout=0.3|lr=0.0005,Every 63 days,2025-03-06,2026-02-27,257
+LLOY.L,GRU,0.081022,0.016740,1.2524%,1.3837,1.0421,45.31%,lb=21|units=64|layers=2|dropout=0.2|lr=0.001,Every 63 days,2025-03-06,2026-02-27,257
+HSBA.L,GRU,0.082763,0.015739,1.0496%,15.7222,10.4573,51.95%,lb=21|units=64|layers=1|dropout=0.5|lr=0.001,Every 63 days,2025-03-06,2026-02-27,257

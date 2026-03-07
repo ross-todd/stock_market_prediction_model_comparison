@@ -1,0 +1,2 @@
+Ticker,Model,lookback,units,layers,dropout,lr,batch_size,Val_RMSE_LogRet
+LLOY.L,GRU,21,64,2,0.2,0.001,32,0.08102246641165091

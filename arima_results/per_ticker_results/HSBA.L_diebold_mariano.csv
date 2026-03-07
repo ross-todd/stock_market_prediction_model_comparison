@@ -1,0 +1,2 @@
+Ticker,Model,DM_Statistic,DM_pValue,Significant_005
+HSBA.L,"ARIMA(2, 0, 3)",0.7198524606750354,0.4716158407175699,Not significant
