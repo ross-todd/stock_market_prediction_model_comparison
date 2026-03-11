@@ -1,2 +1,2 @@
 Ticker,Model,lookback,units,layers,dropout,lr,batch_size,Val_RMSE_LogRet
-BARC.L,GRU,21,64,2,0.3,0.0005,32,0.10193130934514934
+BARC.L,GRU,21,64,2,0.3,0.0005,32,0.10193125931233957

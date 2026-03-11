@@ -478,12 +478,24 @@ for ticker in TICKERS:
     grid_search.fit(X_train_scaled, y_train)
     print(f"   - Search complete")
 
+    # ══════════════════════════════════════════════════════════════════════
+    #   GRID SEARCH RESULTS
+    #   Val_RMSE_LogRet is derived directly from mean_test_score by
+    #   converting the negative MSE back to RMSE. This gives each of the
+    #   50 configurations its own independently calculated validation RMSE
+    #   on log-returns, so the top 3 rows can be used directly in the
+    #   dissertation table without needing a separate best_hyperparameters
+    #   file. bootstrap is excluded from keep_cols as it is fixed to True
+    #   for all configurations and adds no information.
+    # ══════════════════════════════════════════════════════════════════════
+
     cv_results_df = pd.DataFrame(grid_search.cv_results_)
     keep_cols     = ['param_n_estimators', 'param_max_depth', 'param_min_samples_split',
                      'param_min_samples_leaf', 'param_max_features',
-                     'param_max_samples', 'mean_test_score', 'rank_test_score']
+                     'param_max_samples', 'param_ccp_alpha', 'mean_test_score', 'rank_test_score']
     cv_results_df = cv_results_df[keep_cols].sort_values('rank_test_score')
     cv_results_df.insert(0, 'Ticker', ticker)
+    cv_results_df['Val_RMSE_LogRet'] = np.sqrt(-cv_results_df['mean_test_score'])
     cv_results_df.to_csv(os.path.join(PER_TICKER_FOLDER,
         f"{ticker}_grid_search_rf.csv"), index=False)
     print(f"   - Saved: {ticker}_grid_search_rf.csv")
@@ -503,11 +515,6 @@ for ticker in TICKERS:
 
     print(f"\n   Best Configuration:")
     print(f"   Validation RMSE (log-return): {val_rmse_logret:.6f}")
-    pd.DataFrame([{'Ticker': ticker, 'Model': 'RF', **best_params,
-                   'Val_RMSE_LogRet': val_rmse_logret}]) \
-      .to_csv(os.path.join(PER_TICKER_FOLDER,
-          f"{ticker}_best_hyperparameters.csv"), index=False)
-    print(f"   - Saved: {ticker}_best_hyperparameters.csv")
 
     print(f"\n[WALK-FORWARD] Running walk-forward validation "
           f"(refit every {WALK_REFIT_FREQ} days)...")
@@ -639,6 +646,12 @@ for ticker in TICKERS:
       .to_csv(os.path.join(PER_TICKER_FOLDER, f"{ticker}_feature_importance.csv"), index=False)
     print(f"   - Saved: {ticker}_feature_importance.csv")
 
+    scaler               = joblib.load(f'saved_models/scaler_{ticker_clean}_rf.pkl')
+    current_residual_std = max(np.std(
+        y_train.values[val_split_idx:] - best_rf.predict(X_train_scaled[val_split_idx:]),
+        ddof=1), 1e-6)
+    current_model        = best_rf
+    
     last_feature_row  = df_feat[feature_columns].iloc[-1].copy()
     last_price        = df_feat[price_col].iloc[-1]
     last_date         = df_feat.index[-1]

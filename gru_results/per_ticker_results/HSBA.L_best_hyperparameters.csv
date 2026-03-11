@@ -1,2 +1,2 @@
 Ticker,Model,lookback,units,layers,dropout,lr,batch_size,Val_RMSE_LogRet
-HSBA.L,GRU,21,64,1,0.5,0.001,32,0.08276292131285225
+HSBA.L,GRU,21,64,1,0.5,0.001,32,0.08276257109720132

@@ -1,2 +1,2 @@
 Ticker,Model,DM_Statistic,DM_pValue,Significant_005
-BARC.L,"ARIMA(0, 0, 1)",0.668627875624828,0.5037328860964476,Not significant
+BARC.L,"ARIMA(0, 0, 1)",0.6686290418017,0.5037321420059335,Not significant

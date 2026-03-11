@@ -9,14 +9,17 @@
 
 [DATA] Downloading all tickers via data_loader...
 
-[data_loader] Downloading BARC.L (1/3)...
-   ✓ BARC.L: 1305 observations (2021-03-01 → 2026-02-27)
-[data_loader] Downloading LLOY.L (2/3)...
+[data_loader] Loading BARC.L (1/3)...
+   ✓ BARC.L: loaded from cache (saved_data\BARC_L_20210228_20260228.csv)
+   Date range: 2021-03-01 → 2026-02-27
+[data_loader] Loading LLOY.L (2/3)...
    Sleeping 10s...
-   ✓ LLOY.L: 1305 observations (2021-03-01 → 2026-02-27)
-[data_loader] Downloading HSBA.L (3/3)...
+   ✓ LLOY.L: loaded from cache (saved_data\LLOY_L_20210228_20260228.csv)
+   Date range: 2021-03-01 → 2026-02-27
+[data_loader] Loading HSBA.L (3/3)...
    Sleeping 10s...
-   ✓ HSBA.L: 1305 observations (2021-03-01 → 2026-02-27)
+   ✓ HSBA.L: loaded from cache (saved_data\HSBA_L_20210228_20260228.csv)
+   Date range: 2021-03-01 → 2026-02-27
 
 
 ════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -110,12 +113,12 @@
    Avg Interval Width:         26.8749 GBX
    Coverage Rate:              91.44%
    Mean Actual Price (test):   376.8012 GBX
-   Winkler Score (95%, raw):   41.2515  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, raw):   41.2514  ← GBX units, within-ticker comparison only
    Winkler Score (95%, norm):  0.109478  ← price-scaled, valid cross-ticker comparison
 
    Diebold-Mariano Test (vs Naive Random Walk):
    ──────────────────────────────────────────────────
-   DM Statistic:            1.4351
+   DM Statistic:            1.4350
    p-value:                 0.1513
    Result (α=0.05):         Not significant
    Note: Positive DM stat → model errors larger than naive (RW outperforms)
@@ -146,19 +149,19 @@
    Weighted Avg Forecast: 462.857 GBP (50%-20%-10%-10%-10%)
    ────────────────────────────────────────────────────────────────────────────────
    Day 1 (2026-03-02) [Weight: 50%]:
-      Forecast:  458.144 GBP  UP ▲
+      Forecast:  458.144 GBP  UP
       95% PI:    [442.129, 474.740] GBP (residual-based, width ∝ √horizon)
    Day 2 (2026-03-03) [Weight: 20%]:
-      Forecast:  462.881 GBP  UP ▲
+      Forecast:  462.881 GBP  UP
       95% PI:    [440.165, 486.769] GBP (residual-based, width ∝ √horizon)
    Day 3 (2026-03-04) [Weight: 10%]:
-      Forecast:  467.042 GBP  UP ▲
+      Forecast:  467.042 GBP  UP
       95% PI:    [439.127, 496.732] GBP (residual-based, width ∝ √horizon)
    Day 4 (2026-03-05) [Weight: 10%]:
-      Forecast:  470.779 GBP  UP ▲
+      Forecast:  470.779 GBP  UP
       95% PI:    [438.441, 505.503] GBP (residual-based, width ∝ √horizon)
    Day 5 (2026-03-06) [Weight: 10%]:
-      Forecast:  474.263 GBP  UP ▲
+      Forecast:  474.263 GBP  UP
       95% PI:    [437.991, 513.539] GBP (residual-based, width ∝ √horizon)
 
    - Saved: BARC.L_5day_forecast.csv
@@ -297,19 +300,19 @@
    Weighted Avg Forecast: 103.577 GBP (50%-20%-10%-10%-10%)
    ────────────────────────────────────────────────────────────────────────────────
    Day 1 (2026-03-02) [Weight: 50%]:
-      Forecast:  103.095 GBP  UP ▲
+      Forecast:  103.095 GBP  UP
       95% PI:    [99.976, 106.311] GBP (residual-based, width ∝ √horizon)
    Day 2 (2026-03-03) [Weight: 20%]:
-      Forecast:  103.581 GBP  UP ▲
+      Forecast:  103.581 GBP  UP
       95% PI:    [99.177, 108.180] GBP (residual-based, width ∝ √horizon)
    Day 3 (2026-03-04) [Weight: 10%]:
-      Forecast:  104.005 GBP  UP ▲
+      Forecast:  104.005 GBP  UP
       95% PI:    [98.615, 109.689] GBP (residual-based, width ∝ √horizon)
    Day 4 (2026-03-05) [Weight: 10%]:
-      Forecast:  104.388 GBP  UP ▲
+      Forecast:  104.388 GBP  UP
       95% PI:    [98.167, 111.003] GBP (residual-based, width ∝ √horizon)
    Day 5 (2026-03-06) [Weight: 10%]:
-      Forecast:  104.741 GBP  UP ▲
+      Forecast:  104.741 GBP  UP
       95% PI:    [97.787, 112.189] GBP (residual-based, width ∝ √horizon)
 
    - Saved: LLOY.L_5day_forecast.csv
@@ -375,9 +378,9 @@
   lookback      units    layers    dropout        lr    val_rmse_logret
 ----------  ---------  --------  ---------  --------  -----------------
  21.000000  64.000000  1.000000   0.500000  0.001000           0.082763
- 21.000000  32.000000  1.000000   0.300000  0.001000           0.083179
- 21.000000  64.000000  2.000000   0.300000  0.000500           0.083466
- 21.000000  32.000000  2.000000   0.300000  0.001000           0.083743
+ 21.000000  32.000000  1.000000   0.300000  0.001000           0.083178
+ 21.000000  64.000000  2.000000   0.300000  0.000500           0.083465
+ 21.000000  32.000000  2.000000   0.300000  0.001000           0.083742
  21.000000  64.000000  2.000000   0.300000  0.001000           0.084144
    - Saved: HSBA.L_best_hyperparameters.csv
 
@@ -385,7 +388,7 @@
    Validation RMSE (log-return, scaled): 0.082763
 
 [UNCERTAINTY SETUP] Computing residual std from validation set...
-   Residual std from validation set (scaled space): 0.082937
+   Residual std from validation set (scaled space): 0.082936
    Residual std in real log-return space:            0.012201
 
 [WALK-FORWARD] Running walk-forward validation (refit every 63 days)...
@@ -409,10 +412,10 @@
    Uncertainty Metrics (95% PI — empirical residual-std-based):
    NOTE: ARIMA uses analytical CIs; comparison is indicative only.
    ──────────────────────────────────────────────────
-   Avg Interval Width:         47.9784 GBX
+   Avg Interval Width:         47.9783 GBX
    Coverage Rate:              91.05%
    Mean Actual Price (test):   1003.2626 GBX
-   Winkler Score (95%, raw):   102.7674  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, raw):   102.7675  ← GBX units, within-ticker comparison only
    Winkler Score (95%, norm):  0.102433  ← price-scaled, valid cross-ticker comparison
 
    Diebold-Mariano Test (vs Naive Random Walk):
@@ -448,20 +451,20 @@
    Weighted Avg Forecast: 1402.980 GBP (50%-20%-10%-10%-10%)
    ────────────────────────────────────────────────────────────────────────────────
    Day 1 (2026-03-02) [Weight: 50%]:
-      Forecast:  1398.325 GBP  UP ▲
+      Forecast:  1398.325 GBP  UP
       95% PI:    [1365.281, 1432.169] GBP (residual-based, width ∝ √horizon)
    Day 2 (2026-03-03) [Weight: 20%]:
-      Forecast:  1402.548 GBP  UP ▲
+      Forecast:  1402.548 GBP  UP
       95% PI:    [1355.906, 1450.794] GBP (residual-based, width ∝ √horizon)
    Day 3 (2026-03-04) [Weight: 10%]:
-      Forecast:  1406.688 GBP  UP ▲
+      Forecast:  1406.688 GBP  UP
       95% PI:    [1349.611, 1466.179] GBP (residual-based, width ∝ √horizon)
    Day 4 (2026-03-05) [Weight: 10%]:
-      Forecast:  1410.980 GBP  UP ▲
-      95% PI:    [1345.082, 1480.107] GBP (residual-based, width ∝ √horizon)
+      Forecast:  1410.980 GBP  UP
+      95% PI:    [1345.082, 1480.106] GBP (residual-based, width ∝ √horizon)
    Day 5 (2026-03-06) [Weight: 10%]:
-      Forecast:  1415.413 GBP  UP ▲
-      95% PI:    [1341.712, 1493.163] GBP (residual-based, width ∝ √horizon)
+      Forecast:  1415.413 GBP  UP
+      95% PI:    [1341.711, 1493.162] GBP (residual-based, width ∝ √horizon)
 
    - Saved: HSBA.L_5day_forecast.csv
    - Saved: HSBA.L_GRU_30day_history_5day_forecast.png
@@ -492,11 +495,11 @@ Uncertainty Quantification Summary:
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------------+
 | Ticker   | Model   |   Avg_Interval_Width |   Coverage_Rate_% |   Mean_Actual_Price |   Winkler_Score_Raw |   Winkler_Score_Norm |   Dir_Accuracy_% | PI_Method                |
 +==========+=========+======================+===================+=====================+=====================+======================+==================+==========================+
-| BARC.L   | GRU     |              26.8749 |           91.4397 |            376.8012 |             41.2515 |               0.1095 |          43.7500 | Empirical (residual std) |
+| BARC.L   | GRU     |              26.8749 |           91.4397 |            376.8012 |             41.2514 |               0.1095 |          43.7500 | Empirical (residual std) |
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------------+
 | LLOY.L   | GRU     |               5.1771 |           92.9961 |             84.4134 |              7.2838 |               0.0863 |          45.3125 | Empirical (residual std) |
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------------+
-| HSBA.L   | GRU     |              47.9784 |           91.0506 |           1003.2626 |            102.7674 |               0.1024 |          51.9531 | Empirical (residual std) |
+| HSBA.L   | GRU     |              47.9783 |           91.0506 |           1003.2626 |            102.7675 |               0.1024 |          51.9531 | Empirical (residual std) |
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------------+
 
 - Saved: GRU_uncertainty_metrics.csv
@@ -505,11 +508,11 @@ Uncertainty Quantification Summary:
 +----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
 | Ticker   |   Last Actual |    Day 1 |    Day 5 |   Weighted Avg | Trend   | Day 1 PI             | Day 5 PI             |
 +==========+===============+==========+==========+================+=========+======================+======================+
-| BARC.L   |        452.85 |  458.144 |  474.263 |        462.857 | UP ▲    | [442.129, 474.740]   | [437.991, 513.539]   |
+| BARC.L   |        452.85 |  458.144 |  474.263 |        462.857 | UP      | [442.129, 474.740]   | [437.991, 513.539]   |
 +----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
-| LLOY.L   |        102.45 |  103.095 |  104.741 |        103.577 | UP ▲    | [99.976, 106.311]    | [97.787, 112.189]    |
+| LLOY.L   |        102.45 |  103.095 |  104.741 |        103.577 | UP      | [99.976, 106.311]    | [97.787, 112.189]    |
 +----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
-| HSBA.L   |       1393.6  | 1398.33  | 1415.41  |       1402.98  | UP ▲    | [1365.281, 1432.169] | [1341.712, 1493.163] |
+| HSBA.L   |       1393.6  | 1398.33  | 1415.41  |       1402.98  | UP      | [1365.281, 1432.169] | [1341.711, 1493.162] |
 +----------+---------------+----------+----------+----------------+---------+----------------------+----------------------+
 
 - Saved: GRU_5day_forecasts_summary.csv
