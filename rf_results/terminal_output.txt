@@ -75,6 +75,7 @@
    - Walk-forward complete: 257 predictions (refit every 63 days)
 
 [METRICS] Calculating performance metrics...
+   - Saved: BARC.L_RF_predictions.csv
 
    Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
    ──────────────────────────────────────────────────
@@ -194,6 +195,7 @@
    - Walk-forward complete: 257 predictions (refit every 63 days)
 
 [METRICS] Calculating performance metrics...
+   - Saved: LLOY.L_RF_predictions.csv
 
    Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
    ──────────────────────────────────────────────────
@@ -313,6 +315,7 @@
    - Walk-forward complete: 257 predictions (refit every 63 days)
 
 [METRICS] Calculating performance metrics...
+   - Saved: HSBA.L_RF_predictions.csv
 
    Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
    ──────────────────────────────────────────────────

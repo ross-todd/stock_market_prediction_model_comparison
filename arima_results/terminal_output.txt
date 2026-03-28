@@ -10,16 +10,13 @@
 [DATA] Loading all tickers via data_loader...
 
 [data_loader] Loading BARC.L (1/3)...
-   ↓ BARC.L: not in cache, downloading from yfinance...
-   ✓ BARC.L: 1305 observations saved to cache (saved_data\BARC_L_20210228_20260228.csv)
+    BARC.L: loaded from cache (saved_data\BARC_L_20210228_20260228.csv)
    Date range: 2021-03-01 → 2026-02-27
 [data_loader] Loading LLOY.L (2/3)...
-   ↓ LLOY.L: not in cache, downloading from yfinance...
-   ✓ LLOY.L: 1305 observations saved to cache (saved_data\LLOY_L_20210228_20260228.csv)
+    LLOY.L: loaded from cache (saved_data\LLOY_L_20210228_20260228.csv)
    Date range: 2021-03-01 → 2026-02-27
 [data_loader] Loading HSBA.L (3/3)...
-   ↓ HSBA.L: not in cache, downloading from yfinance...
-   ✓ HSBA.L: 1305 observations saved to cache (saved_data\HSBA_L_20210228_20260228.csv)
+    HSBA.L: loaded from cache (saved_data\HSBA_L_20210228_20260228.csv)
    Date range: 2021-03-01 → 2026-02-27
 
 
@@ -62,10 +59,10 @@
 Order    Trend      Window    Val_MAPE
 -------  -------  --------  ----------
 (0,0,1)  c             126    0.013093
-(0,0,2)  c             126    0.013186
-(2,0,1)  c             126    0.013200
+(0,0,2)  c             126    0.013184
+(2,0,1)  c             126    0.013197
 (2,0,0)  c             126    0.013208
-(3,0,3)  c             126    0.013208
+(0,0,1)  n             126    0.013216
 
 [MODEL] Training final model with best configuration...
    Best model: ARIMA(0, 0, 1),  Trend=c,  Window=126
@@ -79,30 +76,31 @@ Order    Trend      Window    Val_MAPE
    Progress: 200/261 predictions... (skipped: 0)
    Progress: 250/261 predictions... (skipped: 0)
    - Walk-forward complete: 261 next-day predictions with 95% CIs
+   - Saved: BARC.L_ARIMA_predictions.csv
 
 [METRICS] Calculating performance metrics...
 
    Performance Metrics (Out-of-Sample, Next-Day Walk-Forward):
    ──────────────────────────────────────────────────
    MAPE:                    1.4185%
-   RMSE:                    6.9836
-   MAE:                     5.1287
+   RMSE:                    6.9835
+   MAE:                     5.1288
    OOS RMSE (log-return):   0.019971  ← scale-free, comparable across tickers
    Directional Accuracy:    45.77%
 
    Uncertainty Metrics (95% CI — analytical, from model parameter uncertainty):
    NOTE: RF/GRU use empirical residual-std intervals; comparison is indicative only.
    ──────────────────────────────────────────────────
-   Avg Interval Width:         28.6072 GBX
+   Avg Interval Width:         28.6050 GBX
    Coverage Rate:              92.72%
    Mean Actual Price (test):   375.6932 GBX
-   Winkler Score (95%, raw):   43.7199  ← GBX units, within-ticker comparison only
-   Winkler Score (95%, norm):  0.116371  ← price-scaled, valid cross-ticker comparison
+   Winkler Score (95%, raw):   43.7143  ← GBX units, within-ticker comparison only
+   Winkler Score (95%, norm):  0.116356  ← price-scaled, valid cross-ticker comparison
 
    Diebold-Mariano Test (vs Naive Random Walk):
    ──────────────────────────────────────────────────
-   DM Statistic:            0.6686
-   p-value:                 0.5037
+   DM Statistic:            0.6683
+   p-value:                 0.5039
    Result (α=0.05):         Not significant
    Note: Positive DM stat → model errors larger than naive (RW outperforms)
    - Saved: BARC.L_diebold_mariano.csv
@@ -196,6 +194,7 @@ Order    Trend      Window    Val_MAPE
    Progress: 200/261 predictions... (skipped: 0)
    Progress: 250/261 predictions... (skipped: 0)
    - Walk-forward complete: 261 next-day predictions with 95% CIs
+   - Saved: LLOY.L_ARIMA_predictions.csv
 
 [METRICS] Calculating performance metrics...
 
@@ -313,6 +312,7 @@ Order    Trend      Window    Val_MAPE
    Progress: 200/261 predictions... (skipped: 0)
    Progress: 250/261 predictions... (skipped: 0)
    - Walk-forward complete: 261 next-day predictions with 95% CIs
+   - Saved: HSBA.L_ARIMA_predictions.csv
 
 [METRICS] Calculating performance metrics...
 
@@ -381,7 +381,7 @@ Order    Trend      Window    Val_MAPE
 +----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
 | Ticker   | Model   | Order     | Trend   |   Window | Val_MAPE   | OOS_MAPE   |   OOS_RMSE_LogRet |    RMSE |     MAE | Dir_Accuracy   |      AIC | Refit_Freq    | Test_Start   | Test_End   |   Test_Obs |
 +==========+=========+===========+=========+==========+============+============+===================+=========+=========+================+==========+===============+==============+============+============+
-| BARC.L   | ARIMA   | (0, 0, 1) | c       |      126 | 1.3093%    | 1.4185%    |          0.019971 |  6.9836 |  5.1287 | 45.77%         |  -657.35 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
+| BARC.L   | ARIMA   | (0, 0, 1) | c       |      126 | 1.3093%    | 1.4185%    |          0.019971 |  6.9835 |  5.1288 | 45.77%         |  -657.35 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
 +----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
 | LLOY.L   | ARIMA   | (2, 0, 1) | c       |      252 | 1.0802%    | 1.1529%    |          0.016222 |  1.3459 |  0.9588 | 44.23%         | -1402.46 | Every 63 days | 2025-02-28   | 2026-02-27 |        261 |
 +----------+---------+-----------+---------+----------+------------+------------+-------------------+---------+---------+----------------+----------+---------------+--------------+------------+------------+
@@ -394,7 +394,7 @@ Uncertainty Quantification Summary:
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
 | Ticker   | Model   |   Avg_Interval_Width |   Coverage_Rate_% |   Mean_Actual_Price |   Winkler_Score_Raw |   Winkler_Score_Norm |   Dir_Accuracy_% | CI_Method          |
 +==========+=========+======================+===================+=====================+=====================+======================+==================+====================+
-| BARC.L   | ARIMA   |              28.6072 |           92.7203 |            375.6932 |             43.7199 |               0.1164 |          45.7692 | Analytical (ARIMA) |
+| BARC.L   | ARIMA   |              28.6050 |           92.7203 |            375.6932 |             43.7143 |               0.1164 |          45.7692 | Analytical (ARIMA) |
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+
 | LLOY.L   | ARIMA   |               5.2648 |           93.8697 |             84.2296 |              7.6466 |               0.0908 |          44.2308 | Analytical (ARIMA) |
 +----------+---------+----------------------+-------------------+---------------------+---------------------+----------------------+------------------+--------------------+

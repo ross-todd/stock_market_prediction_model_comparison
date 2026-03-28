@@ -24,17 +24,11 @@ os.environ["PYTHONWARNINGS"] = "ignore"
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.stattools import adfuller
-from statsmodels.graphics.tsaplots import plot_acf
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, mean_absolute_error
 from scipy.stats import norm
 from tabulate import tabulate
-from joblib import Parallel, delayed
 
 warnings.filterwarnings("ignore")
 
@@ -48,11 +42,10 @@ warnings.filterwarnings("ignore")
 # ══════════════════════════════════════════════════════════════════════════
 
 OUTPUT_FOLDER     = "arima_results"
-PLOTS_FOLDER      = os.path.join(OUTPUT_FOLDER, "plots")
 PER_TICKER_FOLDER = os.path.join(OUTPUT_FOLDER, "per_ticker_results")
 SUMMARY_FOLDER    = os.path.join(OUTPUT_FOLDER, "summary")
 
-for folder in [OUTPUT_FOLDER, PLOTS_FOLDER, PER_TICKER_FOLDER, SUMMARY_FOLDER]:
+for folder in [OUTPUT_FOLDER, PER_TICKER_FOLDER, SUMMARY_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 
@@ -109,9 +102,6 @@ TRENDS       = ['n', 'c']
 VAL_SIZE     = 63
 WINDOW_SIZES = [21, 63, 126, 252, None]
 WALK_REFIT_FREQ = 63
-
-sns.set_style("whitegrid")
-plt.rcParams['figure.figsize'] = (15, 10)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -179,142 +169,6 @@ def winkler_score_normalised(actual, lower, upper, alpha=0.05):
     raw_winkler = winkler_score(actual, lower, upper, alpha)
     mean_price  = np.mean(np.asarray(actual))
     return raw_winkler / mean_price if mean_price != 0 else np.nan
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#   DIAGNOSTIC PLOT FUNCTIONS
-#   These three functions handle all the chart saving for each ticker.
-#   create_prediction_plot_with_ci makes a four panel figure — actual vs
-#   predicted with the confidence band, a scatter plot, errors over time,
-#   and a histogram of the errors. Good for spotting any obvious issues.
-#   create_residual_acf_plot checks whether the model residuals still have
-#   any pattern left in them — ideally they shouldn't.
-#   create_forecast_chart shows the last 30 trading days of real prices
-#   joined up to the 5 day forecast, with the confidence band shaded in.
-# ══════════════════════════════════════════════════════════════════════════
-
-def create_prediction_plot_with_ci(actual, predicted, ci_lower, ci_upper,
-                                   ticker, model_order, output_folder, dates):
-    fig = plt.figure(figsize=(16, 10))
-
-    ax1 = plt.subplot(2, 2, 1)
-    ax1.plot(dates, actual, label='Actual', linewidth=1.5, alpha=0.8, color='blue')
-    ax1.plot(dates, predicted, label='Predicted', linewidth=1.5, alpha=0.8, color='red')
-    ax1.fill_between(dates, ci_lower, ci_upper, alpha=0.2, color='red', label='95% CI')
-    ax1.set_title(f'{ticker} - Actual vs Predicted Prices with 95% CI (ARIMA{model_order})',
-                  fontsize=12, fontweight='bold')
-    ax1.set_xlabel('Date'); ax1.set_ylabel('Price (GBP)')
-    ax1.legend(loc='best'); ax1.grid(True, alpha=0.3)
-    plt.setp(ax1.get_xticklabels(), rotation=45, ha='right')
-
-    ax2 = plt.subplot(2, 2, 2)
-    ax2.scatter(actual, predicted, alpha=0.5, s=20)
-    min_val = min(actual.min(), predicted.min())
-    max_val = max(actual.max(), predicted.max())
-    ax2.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Perfect Prediction')
-    ax2.set_title(f'{ticker} - Prediction Scatter (ARIMA{model_order})', fontsize=12, fontweight='bold')
-    ax2.set_xlabel('Actual Price (GBP)'); ax2.set_ylabel('Predicted Price (GBP)')
-    ax2.legend(loc='best'); ax2.grid(True, alpha=0.3)
-
-    errors = actual - predicted
-    ax3 = plt.subplot(2, 2, 3)
-    ax3.plot(dates, errors, linewidth=0.8, color='darkred')
-    ax3.axhline(y=0, color='black', linestyle='--', linewidth=1)
-    ax3.set_title(f'{ticker} - Forecast Errors Over Time (ARIMA{model_order})',
-                  fontsize=12, fontweight='bold')
-    ax3.set_xlabel('Date'); ax3.set_ylabel('Error (Actual - Predicted)')
-    ax3.grid(True, alpha=0.3)
-    plt.setp(ax3.get_xticklabels(), rotation=45, ha='right')
-
-    ax4 = plt.subplot(2, 2, 4)
-    ax4.hist(errors, bins=50, edgecolor='black', alpha=0.7, color='steelblue')
-    ax4.axvline(x=0, color='red', linestyle='--', linewidth=2, label='Zero Error')
-    ax4.set_title(f'{ticker} - Error Distribution (ARIMA{model_order})',
-                  fontsize=12, fontweight='bold')
-    ax4.set_xlabel('Prediction Error (GBP)'); ax4.set_ylabel('Frequency')
-    ax4.legend(loc='best'); ax4.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    filename = f"{ticker}_ARIMA_predictions.png"
-    plt.savefig(os.path.join(output_folder, filename), dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"   - Saved: {filename}")
-
-
-def create_residual_acf_plot(residuals, ticker, model_order, output_folder):
-    if len(residuals) < 10:
-        print(f"    Not enough residuals for ACF plot"); return
-    fig, ax = plt.subplots(figsize=(12, 5))
-    max_lags = min(40, len(residuals) // 2)
-    plot_acf(residuals, lags=max_lags, ax=ax, alpha=0.05)
-    ax.set_title(f'{ticker} - Residual Autocorrelation (ARIMA{model_order})',
-                 fontweight='bold', fontsize=12)
-    ax.set_xlabel('Lag'); ax.set_ylabel('Autocorrelation'); ax.grid(True, alpha=0.3)
-    textstr = ('Residuals should show no significant\nautocorrelation (stay within blue bands)\n'
-               'if model is correctly specified.')
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    ax.text(0.98, 0.97, textstr, transform=ax.transAxes, fontsize=9,
-            verticalalignment='top', horizontalalignment='right', bbox=props)
-    plt.tight_layout()
-    filename = f"{ticker}_ARIMA_residual_acf.png"
-    plt.savefig(os.path.join(output_folder, filename), dpi=300, bbox_inches='tight')
-    plt.close(fig)
-    print(f"   - Saved: {filename}")
-
-
-def create_forecast_chart(ticker, df, price_col, last_actual, last_date,
-                          forecast_dates, forecast_prices,
-                          ci_lower_prices, ci_upper_prices,
-                          model_label, output_folder, n_history=30):
-    """
-    Saves a line chart showing the last n_history trading days of actual
-    prices followed by the 5-day forward forecast with 95% CI/PI ribbon.
-    model_label is used in the title and filename (e.g. 'ARIMA(1,0,1)', 'GRU', 'RF').
-    """
-    hist_prices = df[price_col].iloc[-n_history:]
-    hist_dates  = hist_prices.index
-
-    # Stitch history endpoint to forecast so the line is continuous
-    bridge_dates  = [last_date]   + list(forecast_dates)
-    bridge_prices = [last_actual] + list(forecast_prices)
-    bridge_lower  = [last_actual] + list(ci_lower_prices)
-    bridge_upper  = [last_actual] + list(ci_upper_prices)
-
-    fig, ax = plt.subplots(figsize=(14, 6))
-
-    ax.axvspan(bridge_dates[0], bridge_dates[-1],
-               alpha=0.06, color='gold', label='Forecast window')
-
-    ax.plot(hist_dates, hist_prices.values,
-            color='#1f77b4', linewidth=2.0, label='Actual (last 30 days)')
-    ax.plot(hist_dates, hist_prices.values,
-            'o', color='#1f77b4', markersize=3, alpha=0.6)
-
-    ax.axvline(x=last_date, color='grey', linestyle='--',
-               linewidth=1.2, alpha=0.7, label=f'Last actual ({last_date.date()})')
-
-    ax.fill_between(bridge_dates, bridge_lower, bridge_upper,
-                    color='#ff7f0e', alpha=0.18, label='95% CI/PI')
-
-    ax.plot(bridge_dates, bridge_prices,
-            color='#ff7f0e', linewidth=2.2,
-            linestyle='--', marker='o', markersize=6,
-            label='Forecast')
-
-    ax.set_title(f'{ticker}  –  Last 30 Trading Days + 5-Day Forecast  ({model_label})',
-                 fontsize=13, fontweight='bold', pad=14)
-    ax.set_xlabel('Date', fontsize=10)
-    ax.set_ylabel('Price (GBX)', fontsize=10)
-    ax.legend(loc='best', fontsize=9)
-    ax.grid(True, alpha=0.3)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
-    plt.tight_layout()
-
-    safe_label = model_label.replace('(', '').replace(')', '').replace(',', '_').replace(' ', '_')
-    filename   = f"{ticker}_ARIMA_30day_history_5day_forecast.png"
-    plt.savefig(os.path.join(output_folder, filename), dpi=300, bbox_inches='tight')
-    plt.close(fig)
-    print(f"   - Saved: {filename}")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -569,6 +423,22 @@ for ticker in TICKERS:
 
     print(f"   - Walk-forward complete: {len(wf_predicted_prices)} next-day predictions with 95% CIs")
 
+    # ══════════════════════════════════════════════════════════════════════
+    #   SAVE PREDICTIONS TO CSV FOR CHART GENERATION
+    #   Saves the walk-forward predictions, actual prices, and prediction
+    #   intervals to a CSV file for use in the standalone chart script.
+    # ══════════════════════════════════════════════════════════════════════
+    pd.DataFrame({
+        'Date':      test_dates,
+        'Actual':    test_actual,
+        'Predicted': wf_predicted_prices,
+        'CI_Lower':  wf_ci_lower_prices,
+        'CI_Upper':  wf_ci_upper_prices,
+        'Model':     'ARIMA',
+        'Ticker':    ticker
+    }).to_csv(os.path.join(PER_TICKER_FOLDER, f"{ticker}_ARIMA_predictions.csv"), index=False)
+    print(f"   - Saved: {ticker}_ARIMA_predictions.csv")
+
     print(f"\n[METRICS] Calculating performance metrics...")
 
     mape_oos        = mean_absolute_percentage_error(test_actual, wf_predicted_prices)
@@ -650,12 +520,7 @@ for ticker in TICKERS:
               f"{ticker}_diebold_mariano.csv"), index=False)
         print(f"   - Saved: {ticker}_diebold_mariano.csv")
 
-    print(f"\n[PLOTS & FORECAST] Generating diagnostic plots and 5-day forecast...")
-
-    create_prediction_plot_with_ci(test_actual, wf_predicted_prices,
-                                   wf_ci_lower_prices, wf_ci_upper_prices,
-                                   ticker, best_order, PLOTS_FOLDER, test_dates)
-    create_residual_acf_plot(final_model.resid, ticker, best_order, PLOTS_FOLDER)
+    print(f"\n[FORECAST] Generating 5-day forecast...")
 
     forecast_obj     = current_model.get_forecast(steps=5, alpha=0.05)
     forecast_logrets = np.asarray(forecast_obj.predicted_mean)
@@ -706,11 +571,6 @@ for ticker in TICKERS:
     pd.DataFrame(ticker_forecast_rows).to_csv(
         os.path.join(PER_TICKER_FOLDER, f"{ticker}_5day_forecast.csv"), index=False)
     print(f"\n   - Saved: {ticker}_5day_forecast.csv")
-
-    create_forecast_chart(
-        ticker, df, price_col, last_actual, last_date,
-        forecast_dates, forecast_prices, ci_lower_prices, ci_upper_prices,
-        model_label=f'ARIMA{best_order}', output_folder=PLOTS_FOLDER, n_history=30)
 
     all_forecasts.append([
         ticker, f"{last_actual:.3f}",
