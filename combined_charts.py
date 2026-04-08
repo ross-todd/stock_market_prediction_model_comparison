@@ -1,39 +1,15 @@
-"""
-Ross Todd
-BSc (Hons) Software Development
-Honours Project 2026 - Stock Market Prediction Comparison Analysis
-
-combined_charts.py — Chart and Analysis Generator
----------------------------------------------------
-Produces:
-  1. Three forecast PNGs (one per model) with last 20 trading days +
-     5-day forecast + actual March prices
-  2. OOS MAPE bar chart from Table 4.5 values
-  3. Forecast vs Actual MAPE analysis printed to console
-  4. Three prediction uncertainty PNGs (one per model) showing
-     5-day forecast line + CI shading + value annotations
-  5. Three prediction interval coverage PNGs (one per model) showing
-     the full out-of-sample test period with actual price, predicted
-     price, CI shading, and points outside the interval highlighted
-
-FOLDER STRUCTURE EXPECTED:
-    saved_data/BARC_L_20210228_20260228.csv
-    saved_data/LLOY_L_20210228_20260228.csv
-    saved_data/HSBA_L_20210228_20260228.csv
-
-    arima_results/per_ticker_results/BARC.L_5day_forecast.csv
-    arima_results/per_ticker_results/LLOY.L_5day_forecast.csv
-    arima_results/per_ticker_results/HSBA.L_5day_forecast.csv
-    (same for rf_results and gru_results)
-
-    arima_results/per_ticker_results/BARC.L_ARIMA_predictions.csv
-    arima_results/per_ticker_results/LLOY.L_ARIMA_predictions.csv
-    arima_results/per_ticker_results/HSBA.L_ARIMA_predictions.csv
-    (same for rf_results and gru_results)
-
-INSTALL DEPENDENCIES:
-    pip install plotly pandas kaleido matplotlib numpy
-"""
+# Ross Todd
+# BSc (Hons) Software Development
+# Honours Project 2026 - Stock Market Prediction Comparison Analysis
+#
+# combined_charts.py - Chart and Analysis Generator
+#
+# --- Outputs ---
+# 1. Forecast PNGs: 20-day history + 5-day pred vs actual March prices (per model)
+# 2. MAPE Comparison: Bar chart showing OOS performance across all stocks
+# 3. Stats Audit: Console output of MAE/MAPE and daily error decay
+# 4. Confidence Intervals: 5-day forecast with CI shading and price labels
+# 5. Coverage Maps: Full test period showing actual vs pred + highlighted CI breakouts
 
 import os
 import pandas as pd
@@ -42,9 +18,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 
-# ─────────────────────────────────────────────
-# CONFIGURATION
-# ─────────────────────────────────────────────
+# --- CONFIGURATION ---
 
 BASE_DIR     = "."
 SAVED_DIR    = "saved_data"
@@ -141,9 +115,7 @@ ACTUAL_MAPE = {
     "HSBA.L": [1332.00, 1262.80, 1291.40, 1278.80, 1245.00],
 }
 
-# ─────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────
+# --- HELPER FUNCTIONS ---
 
 def load_actual(saved_file, n_days=20):
     path = os.path.join(BASE_DIR, SAVED_DIR, saved_file)
@@ -185,14 +157,13 @@ def weekly_ticks(dates):
     return [dates[i] for i in range(0, len(dates), 5)]
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   SECTION 1 — FORECAST CHARTS (one per model, three subplots per stock)
-#   Shows last 20 trading days of actual price, 5-day forecast line,
-#   and actual March 2026 prices for comparison
-# ══════════════════════════════════════════════════════════════════════════
+# --- SECTION 1: FORECAST CHARTS ---
+# One figure per model, three subplots (one per stock)
+# Shows last 20 trading days of actual price, 5-day forecast line,
+# and actual March 2026 prices for comparison
 
 print("\n" + "="*60)
-print("SECTION 1 — Building forecast charts")
+print("SECTION 1 - Building forecast charts")
 print("="*60)
 
 for model_name, model_folder in MODELS.items():
@@ -210,7 +181,7 @@ for model_name, model_folder in MODELS.items():
         forecast_ticker = stock_info["forecast_ticker"]
         saved_file      = stock_info["saved_file"]
 
-        # ── Actual prices (last 20 trading days) ─────────────────────────
+        # Load actual prices for last 20 trading days
         try:
             actual_df     = load_actual(saved_file)
             actual_dates  = actual_df[DATE_COL].dt.strftime("%d %b").tolist()
@@ -221,7 +192,7 @@ for model_name, model_folder in MODELS.items():
             print(f"    WARNING: could not load actual data for {stock_name}: {e}")
             actual_dates, actual_prices, last_date, last_price = [], [], None, None
 
-        # ── Forecast ──────────────────────────────────────────────────────
+        # Load 5-day forecast
         fc_dates, fc_prices = [], []
         try:
             fc        = load_forecast(model_folder, forecast_ticker)
@@ -232,7 +203,7 @@ for model_name, model_folder in MODELS.items():
 
         march_prices = ACTUAL_MARCH[stock_name]
 
-        # ── Plot actual historical line ───────────────────────────────────
+        # Plot actual historical line
         if actual_dates:
             fig.add_trace(go.Scatter(
                 x=actual_dates,
@@ -246,7 +217,7 @@ for model_name, model_folder in MODELS.items():
                 hovertemplate="%{y:.2f}p<extra>Actual</extra>",
             ), row=row, col=1)
 
-        # ── Forecast line ─────────────────────────────────────────────────
+        # Plot forecast line, connecting from last actual price
         if fc_dates and last_date:
             fig.add_trace(go.Scatter(
                 x=[last_date] + fc_dates,
@@ -261,7 +232,7 @@ for model_name, model_folder in MODELS.items():
                 hovertemplate="%{y:.2f}p<extra>Forecast</extra>",
             ), row=row, col=1)
 
-        # ── Actual March prices line ──────────────────────────────────────
+        # Plot actual March prices for comparison
         if last_date and march_prices:
             fig.add_trace(go.Scatter(
                 x=[last_date] + MARCH_DATES,
@@ -276,7 +247,7 @@ for model_name, model_folder in MODELS.items():
                 hovertemplate="%{y:.2f}p<extra>Actual Mar</extra>",
             ), row=row, col=1)
 
-        # ── Vertical divider ──────────────────────────────────────────────
+        # Vertical line marking start of forecast period
         if last_date:
             fig.add_vline(
                 x=last_date,
@@ -286,7 +257,7 @@ for model_name, model_folder in MODELS.items():
                 row=row, col=1
             )
 
-        # ── Weekly x ticks ────────────────────────────────────────────────
+        # Set weekly x-axis ticks
         if actual_dates:
             all_dates = actual_dates + (fc_dates if fc_dates else [])
             tick_vals = weekly_ticks(all_dates)
@@ -334,13 +305,11 @@ for model_name, model_folder in MODELS.items():
     print(f"    Saved: {out_path}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   SECTION 2 — OOS MAPE BAR CHART (Table 4.5 values)
-#   Grouped bar chart showing OOS MAPE by model and stock
-# ══════════════════════════════════════════════════════════════════════════
+# --- SECTION 2: OOS MAPE BAR CHART ---
+# Grouped bar chart showing OOS MAPE by model and stock (Table 4.5 values)
 
 print("\n" + "="*60)
-print("SECTION 2 — Building OOS MAPE bar chart")
+print("SECTION 2 - Building OOS MAPE bar chart")
 print("="*60)
 
 models_list  = ["ARIMA", "Random Forest", "GRU"]
@@ -385,14 +354,11 @@ plt.close()
 print(f"  Saved: {mape_path}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   SECTION 3 — FORECAST VS ACTUAL MAPE ANALYSIS
-#   Prints per-day and average MAPE for each model and stock
-#   comparing the 5-day forecasts against actual March 2026 prices
-# ══════════════════════════════════════════════════════════════════════════
+# --- SECTION 3: FORECAST VS ACTUAL MAPE ANALYSIS ---
+# Prints per-day and average MAPE for each model and stock
 
 print("\n" + "="*60)
-print("SECTION 3 — Forecast vs Actual MAPE Analysis")
+print("SECTION 3 - Forecast vs Actual MAPE Analysis")
 print("="*60)
 
 print(f"\n{'Stock':<12} {'Model':<8} {'MAE':>8} {'MAPE':>8}")
@@ -418,15 +384,13 @@ for ticker, stock_name in [("BARC.L", "Barclays"), ("LLOY.L", "Lloyds"), ("HSBA.
         print(f"{stock_name:<12} {model:<8} {daily_mape[0]:>7.2f}% {daily_mape[1]:>7.2f}% {daily_mape[2]:>7.2f}% {daily_mape[3]:>7.2f}% {daily_mape[4]:>7.2f}% {avg_mape:>7.2f}%")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   SECTION 4 — PREDICTION UNCERTAINTY CHARTS
-#   One figure per model, three subplots per stock
-#   Shows 5-day forecast line + CI/PI shading + value annotations
-#   Annotations only shown on forecast dates (not 27 Feb anchor point)
-# ══════════════════════════════════════════════════════════════════════════
+# --- SECTION 4: PREDICTION UNCERTAINTY CHARTS ---
+# One figure per model, three subplots per stock
+# Shows 5-day forecast line + CI/PI shading + value annotations
+# Annotations only shown on forecast dates, not the 27 Feb anchor point
 
 print("\n" + "="*60)
-print("SECTION 4 — Building prediction uncertainty charts")
+print("SECTION 4 - Building prediction uncertainty charts")
 print("="*60)
 
 for model_name, model_folder in MODELS.items():
@@ -444,7 +408,7 @@ for model_name, model_folder in MODELS.items():
         forecast_ticker = stock_info["forecast_ticker"]
         base_price      = BASE_PRICES[stock_name]
 
-        # ── Load forecast — initialise before try so always defined ──────
+        # Load forecast and CI bounds
         fc_dates, fc_prices, fc_lower, fc_upper = [], [], None, None
         try:
             fc        = load_forecast(model_folder, forecast_ticker)
@@ -457,7 +421,7 @@ for model_name, model_folder in MODELS.items():
         except FileNotFoundError:
             print(f"    WARNING: forecast not found for {model_name} / {forecast_ticker}")
 
-        # ── CI shading ────────────────────────────────────────────────────
+        # CI shading polygon
         if fc_dates and fc_lower and fc_upper:
             anchor_x = ["27 Feb"] + fc_dates
             shade_x  = anchor_x + anchor_x[::-1]
@@ -475,7 +439,7 @@ for model_name, model_folder in MODELS.items():
                 hoverinfo="skip",
             ), row=row, col=1)
 
-        # ── Forecast line with annotations on forecast dates only ─────────
+        # Forecast line with price annotations on forecast dates only
         if fc_dates:
             fig.add_trace(go.Scatter(
                 x=["27 Feb"] + fc_dates,
@@ -493,7 +457,7 @@ for model_name, model_folder in MODELS.items():
                 hovertemplate="%{y:.2f}p<extra>Forecast</extra>",
             ), row=row, col=1)
 
-        # ── Upper bound annotations on forecast dates only ────────────────
+        # Upper bound annotations on forecast dates only
         if fc_dates and fc_upper:
             fig.add_trace(go.Scatter(
                 x=["27 Feb"] + fc_dates,
@@ -506,7 +470,7 @@ for model_name, model_folder in MODELS.items():
                 hoverinfo="skip",
             ), row=row, col=1)
 
-        # ── Lower bound annotations on forecast dates only ────────────────
+        # Lower bound annotations on forecast dates only
         if fc_dates and fc_lower:
             fig.add_trace(go.Scatter(
                 x=["27 Feb"] + fc_dates,
@@ -519,7 +483,7 @@ for model_name, model_folder in MODELS.items():
                 hoverinfo="skip",
             ), row=row, col=1)
 
-        # ── Y-axis scaled to CI bounds so forecast movement is visible ────
+        # Scale y-axis to CI bounds so forecast movement is visible
         y_min = min(fc_lower) * 0.98 if fc_lower else None
         y_max = max(fc_upper) * 1.02 if fc_upper else None
 
@@ -566,20 +530,13 @@ for model_name, model_folder in MODELS.items():
     print(f"    Saved: {out_path}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   SECTION 5 — FULL TEST PERIOD COVERAGE CHARTS
-#   One figure per model, three subplots per stock
-#   Shows the full out-of-sample test period with:
-#     - Actual price as a solid stock-coloured line
-#     - Predicted price as a dashed orange line
-#     - CI/PI shading between upper and lower bounds (darker than Section 4)
-#     - Points where actual falls outside the CI highlighted as red dots
-#     - Coverage rate annotated on each subplot
-#   This directly visualises the coverage rates reported in Table 4.9
-# ══════════════════════════════════════════════════════════════════════════
+# --- SECTION 5: FULL TEST PERIOD COVERAGE CHARTS ---
+# Full OOS test period: actual vs predicted with CI shading
+# Points outside the interval are highlighted in red
+# One figure per model, three subplots per stock
 
 print("\n" + "="*60)
-print("SECTION 5 — Building full test period coverage charts")
+print("SECTION 5 - Building full test period coverage charts")
 print("="*60)
 
 for model_name, model_folder in MODELS.items():
@@ -597,7 +554,7 @@ for model_name, model_folder in MODELS.items():
         actual_colour   = STOCK_COLOURS[stock_name]
         forecast_ticker = stock_info["forecast_ticker"]
 
-        # ── Load full test period predictions ─────────────────────────────
+        # Load full test period predictions
         try:
             pred_df   = load_predictions(model_folder, forecast_ticker, pred_suffix)
             dates     = pred_df[DATE_COL].dt.strftime("%d %b %y").tolist()
@@ -611,7 +568,7 @@ for model_name, model_folder in MODELS.items():
             print(f"    WARNING: predictions not found for {model_name} / {forecast_ticker}")
             continue
 
-        # ── Identify points outside the CI ───────────────────────────────
+        # Find points where actual price falls outside the CI
         if ci_lower and ci_upper:
             outside_mask  = [(a < l or a > u) for a, l, u in zip(actual, ci_lower, ci_upper)]
             outside_dates = [d for d, m in zip(dates, outside_mask) if m]
@@ -619,7 +576,7 @@ for model_name, model_folder in MODELS.items():
             inside_count  = sum(1 for m in outside_mask if not m)
             coverage      = inside_count / len(outside_mask) * 100
 
-        # ── CI shading (darker than Section 4) ───────────────────────────
+        # CI shading polygon (darker fill than Section 4)
         if ci_lower and ci_upper:
             shade_x = dates + dates[::-1]
             shade_y = ci_upper + ci_lower[::-1]
@@ -636,7 +593,7 @@ for model_name, model_folder in MODELS.items():
                 hoverinfo="skip",
             ), row=row, col=1)
 
-        # ── Predicted price line ──────────────────────────────────────────
+        # Predicted price line
         fig.add_trace(go.Scatter(
             x=dates,
             y=predicted,
@@ -649,7 +606,7 @@ for model_name, model_folder in MODELS.items():
             hovertemplate="%{y:.2f}p<extra>Predicted</extra>",
         ), row=row, col=1)
 
-        # ── Actual price line ─────────────────────────────────────────────
+        # Actual price line
         fig.add_trace(go.Scatter(
             x=dates,
             y=actual,
@@ -662,7 +619,7 @@ for model_name, model_folder in MODELS.items():
             hovertemplate="%{y:.2f}p<extra>Actual</extra>",
         ), row=row, col=1)
 
-        # ── Points outside CI highlighted as larger red dots ─────────────
+        # Highlight points outside CI as larger red dots
         if ci_lower and ci_upper and outside_dates:
             fig.add_trace(go.Scatter(
                 x=outside_dates,
@@ -676,7 +633,7 @@ for model_name, model_folder in MODELS.items():
                 hovertemplate="%{y:.2f}p<extra>Outside CI</extra>",
             ), row=row, col=1)
 
-        # ── Coverage rate annotation ──────────────────────────────────────
+        # Coverage rate annotation in top right corner of each subplot
         if ci_lower and ci_upper:
             fig.add_annotation(
                 x=0.98, y=0.97,
@@ -693,7 +650,7 @@ for model_name, model_folder in MODELS.items():
                 row=row, col=1,
             )
 
-        # ── Monthly x ticks (approx 1 per month = 21 trading days) ───────
+        # Monthly x-axis ticks (approx 1 per month = 21 trading days)
         tick_vals = [dates[i] for i in range(0, len(dates), 21)]
         fig.update_xaxes(
             tickvals=tick_vals,

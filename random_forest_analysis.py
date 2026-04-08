@@ -5,15 +5,11 @@
 #
 #   Random Forest model — walk-forward validation and 5-day forecast for BARC, LLOY, HSBA
 #
-#   In this project, Random Forest is used as a multivariate model trained on
-#   14 engineered technical features (lagged returns, SMAs, RSI, Bollinger band
-#   width, volatility, volume ratio, ATR). ARIMA is a univariate baseline trained
-#   on log-returns only, and GRU is a multivariate deep learning model trained on
-#   10 features. ARIMA provides a classical statistical baseline against which the
-#   advanced feature-based models can be benchmarked. All three share the same data
-#   window, 80/20 split, walk-forward protocol, evaluation metrics, and refit
-#   frequency (every 63 trading days) so that differences in predictive performance
-#   are attributable to model class rather than evaluation methodology.
+#   Multivariate model trained on 14 engineered technical features (lagged returns,
+#   SMAs, RSI, Bollinger band width, volatility, volume ratio, ATR). ARIMA is the
+#   univariate baseline and GRU is the deep learning model. All three share the same
+#   data window, 80/20 split, walk-forward protocol, evaluation metrics, and refit
+#   frequency (every 63 trading days).
 # ══════════════════════════════════════════════════════════════════════════════════════════
 
 import pandas as pd
@@ -100,18 +96,12 @@ WALK_REFIT_FREQ = 63
 
 # ══════════════════════════════════════════════════════════════════════════
 #   HELPER FUNCTIONS
-#   A few utility functions used throughout the script.
-#   create_enhanced_features builds all 14 technical indicators from the
-#   raw price and volume data — these are the inputs the RF model learns from.
-#   get_prediction_intervals wraps the RF point forecast with a simple
-#   95% interval based on the residual standard deviation from training.
-#   diebold_mariano_test checks whether RF is actually doing better than
-#   just guessing tomorrow will be the same as today (the naive baseline).
-#   winkler_score measures how good the prediction intervals are — it
-#   penalises both wide intervals and ones that miss the actual value.
-#   winkler_score_normalised is the same thing but divided by the average
-#   price, so I can fairly compare the three stocks against each other
-#   even though they trade at very different price levels.
+#   create_enhanced_features: builds the 14 technical indicators used as
+#   model inputs. get_prediction_intervals: wraps the point forecast with
+#   a 95% PI from residual std. diebold_mariano_test: checks whether RF
+#   beats the naive random walk baseline. winkler_score / normalised:
+#   interval quality metric — penalises width and misses. Normalised
+#   version divides by mean price for valid cross-ticker comparison.
 # ══════════════════════════════════════════════════════════════════════════
 
 def create_enhanced_features(df, price_col='Adj Close'):
@@ -310,13 +300,8 @@ for ticker in TICKERS:
 
     # ══════════════════════════════════════════════════════════════════════
     #   GRID SEARCH RESULTS
-    #   Val_RMSE_LogRet is derived directly from mean_test_score by
-    #   converting the negative MSE back to RMSE. This gives each of the
-    #   50 configurations its own independently calculated validation RMSE
-    #   on log-returns, so the top 3 rows can be used directly in the
-    #   dissertation table without needing a separate best_hyperparameters
-    #   file. bootstrap is excluded from keep_cols as it is fixed to True
-    #   for all configurations and adds no information.
+    #   Val_RMSE_LogRet converted from mean_test_score (negative MSE).
+    #   bootstrap excluded from keep_cols as it is fixed to True.
     # ══════════════════════════════════════════════════════════════════════
 
     cv_results_df = pd.DataFrame(grid_search.cv_results_)
@@ -563,10 +548,7 @@ for ticker in TICKERS:
     forecast_ci_lower   = last_price * np.exp(cumulative_log_rets - 1.96 * current_residual_std * np.sqrt(horizons))
     forecast_ci_upper   = last_price * np.exp(cumulative_log_rets + 1.96 * current_residual_std * np.sqrt(horizons))
 
-    # The weighted average gives more importance to the nearer days since
-    # short-term forecasts from any model tend to be more reliable than
-    # longer ones. Day 1 gets 50% of the weight, day 2 gets 20%, and the
-    # remaining three days split the last 30% equally between them.
+    # Day 1 gets 50% weight, day 2 gets 20%, days 3-5 split the remaining 30%
     weighted_avg        = np.sum(forecast_prices * day_weights)
     weighted_signal     = "UP" if weighted_avg > last_price else "DOWN"
 

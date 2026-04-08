@@ -19,13 +19,7 @@ CACHE_FOLDER = "saved_data"
 os.makedirs(CACHE_FOLDER, exist_ok=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   DOWNLOAD SINGLE TICKER
-#   This function handles downloading one ticker at a time from Yahoo
-#   Finance. It flattens the column headers that yfinance sometimes returns
-#   as a MultiIndex, makes sure Adj Close is always present, and fills any
-#   missing business days so there are no gaps in the data.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Download single ticker from yfinance ─────────────────────────────────
 
 def download_ticker(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     raw_data = yf.download(ticker, start=start_date, end=end_date,
@@ -48,13 +42,7 @@ def download_ticker(ticker: str, start_date: str, end_date: str) -> pd.DataFrame
     return raw_data
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   LOAD SINGLE TICKER WITH CACHING
-#   Checks if a cached CSV exists for this ticker and date range.
-#   If found, loads from CSV. If not, downloads from yfinance and saves.
-#   The cache filename includes the date range so if you change the
-#   data window it will automatically re-download fresh data.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Load single ticker with caching ──────────────────────────────────────
 
 def load_ticker_cached(ticker: str, start_date: str, end_date: str,
                        verbose: bool = True) -> pd.DataFrame:
@@ -83,14 +71,7 @@ def load_ticker_cached(ticker: str, start_date: str, end_date: str,
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   LOAD ALL TICKERS
-#   Loops through the list of tickers and loads each one in turn.
-#   Uses the cache if available, otherwise downloads from yfinance.
-#   An optional delay between downloads is included to avoid hitting
-#   Yahoo Finance rate limits. Any ticker that fails gets skipped and
-#   a message is printed, so the rest of the script can still run.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Load all tickers ──────────────────────────────────────────────────────
 
 def load_all_tickers(
     tickers: list,

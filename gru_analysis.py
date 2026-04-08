@@ -1,4 +1,4 @@
-# ═════════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════════════
 #   Ross Todd
 #   BSc (Hons) Software Development
 #   Honours Project 2026 - Stock Market Prediction Comparison Analysis
@@ -14,7 +14,7 @@
 #   protocol, evaluation metrics, and refit frequency (every 63 trading days) so
 #   that differences in predictive performance are attributable to model class
 #   rather than evaluation methodology.
-# ═════════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════════════
 
 import sys
 import warnings
@@ -210,7 +210,6 @@ def build_gru_model(lookback, n_features, units=64, layers=1, dropout=0.2, lr=0.
 
 def get_prediction_intervals(keras_model, X_new, residual_std, horizon=1):
     # residual_std is in scaled space; intervals widen with sqrt(horizon)
-    # 1.96 corresponds to a 95% prediction interval
     point_pred  = keras_model.predict(X_new, verbose=0).flatten()
     scaled_std  = residual_std * np.sqrt(horizon)
     lower_bound = point_pred - 1.96 * scaled_std
@@ -219,8 +218,7 @@ def get_prediction_intervals(keras_model, X_new, residual_std, horizon=1):
 
 
 def get_units_for_lookback(lb):
-    # Ties network width to sequence length to keep search tractable.
-    # Longer sequences have more temporal context so benefit from wider networks.
+    # units constrained by lookback — see dissertation methodology
     if lb <= 40:
         return [32, 64]
     elif lb <= 120:
@@ -447,11 +445,8 @@ for ticker in TICKERS:
 
     # ══════════════════════════════════════════════════════════════════════
     #   UNCERTAINTY SETUP
-    #   Works out the residual standard deviation from the validation slice
-    #   of the training data. This is then used to build the 95% prediction
-    #   intervals during walk-forward and for the 5 day forecast. The std
-    #   is also converted from scaled space back to real log-return space
-    #   so the forecast intervals are in meaningful price units.
+    #   Residual std from the validation slice of training data, used to
+    #   build 95% prediction intervals during walk-forward and forecasting.
     # ══════════════════════════════════════════════════════════════════════
 
     print(f"\n[UNCERTAINTY SETUP] Computing residual std from validation set...")
@@ -484,8 +479,7 @@ for ticker in TICKERS:
     #   prediction at each step and then adding the true value to the
     #   history before moving on. The model gets refitted every 63 trading
     #   days to match the ARIMA and RF refit schedules. Early stopping
-    #   during refits uses val_loss rather than training loss to stop the
-    #   model overfitting to the most recent data.
+    #   on val_loss during refits to avoid overfitting to recent data.
     # ══════════════════════════════════════════════════════════════════════
 
     print(f"\n[WALK-FORWARD] Running walk-forward validation "
@@ -683,8 +677,7 @@ for ticker in TICKERS:
     #   Recursive forecast — each day's predicted log-return gets converted
     #   back to real space, used to advance the price, then re-scaled before
     #   being fed into the next lookback window. real_residual_std is used
-    #   for the interval widths rather than the scaled version, so the bands
-    #   are in real log-return space and widen correctly with the horizon.
+    #   for the interval widths so the bands widen correctly with the horizon.
     # ══════════════════════════════════════════════════════════════════════
 
     last_X = scaled_data[-lb_best:].copy().reshape(1, lb_best, n_features)
@@ -695,18 +688,18 @@ for ticker in TICKERS:
         mean_scaled, _, _ = get_prediction_intervals(
             best_model, last_X, residual_std, horizon=1)
 
-        # Convert from scaled [0,1] space back to real log-return space
+        # scaled → real log-return
         dummy_inv        = np.zeros((1, scaled_data.shape[1]))
         dummy_inv[0, -1] = mean_scaled[0]
         real_log_ret     = scaler.inverse_transform(dummy_inv)[0, -1]
         forecast_log_rets.append(real_log_ret)
 
-        # Re-scale before feeding into the next lookback window
+        # re-scale before feeding into the next window
         dummy_fwd        = np.zeros((1, scaled_data.shape[1]))
         dummy_fwd[0, -1] = real_log_ret
         scaled_log_ret   = scaler.transform(dummy_fwd)[0, -1]
 
-        # Roll the lookback window forward
+        # roll the lookback window forward
         next_row      = last_X[0, -1, :].copy()
         next_row[9]   = scaled_log_ret   # Log_Ret_Lag1 (feature index 9)
         next_row[-1]  = scaled_log_ret   # log_return   (target column, last index)
@@ -720,10 +713,7 @@ for ticker in TICKERS:
     forecast_ci_lower   = last_price * np.exp(cumulative_log_rets - 1.96 * real_residual_std * np.sqrt(horizons))
     forecast_ci_upper   = last_price * np.exp(cumulative_log_rets + 1.96 * real_residual_std * np.sqrt(horizons))
 
-    # The weighted average gives more importance to the nearer days since
-    # short-term forecasts from any model tend to be more reliable than
-    # longer ones. Day 1 gets 50% of the weight, day 2 gets 20%, and the
-    # remaining three days split the last 30% equally between them.
+    # Day 1 gets 50% weight, day 2 gets 20%, days 3-5 split the remaining 30%
     weighted_avg    = np.sum(forecast_prices * day_weights)
     weighted_signal = "UP" if weighted_avg > last_price else "DOWN"
 

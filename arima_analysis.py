@@ -5,14 +5,11 @@
 #
 #   ARIMA model — walk-forward validation and 5-day forecast for BARC, LLOY, HSBA
 #
-#   In this project, ARIMA is used as a univariate time-series baseline,
-#   trained on log-returns only. Random Forest and GRU are both trained as
-#   multivariate models with engineered technical features. ARIMA provides a 
-#   classical statistical baseline against which the advanced feature-based models 
-#   can be benchmarked. All three share the same data window, 80/20 split,
-#   walk-forward protocol, evaluation metrics, and refit frequency 
-#   (every 63 trading days) so that differences in predictive performance are 
-#   attributable to model class rather than evaluation methodology.
+#   Univariate time-series baseline trained on log-returns only.
+#   RF and GRU are multivariate with engineered features; ARIMA is the
+#   classical statistical benchmark. All three models share the same data
+#   window, 80/20 split, walk-forward protocol, evaluation metrics, and
+#   refit frequency (every 63 trading days).
 # ═════════════════════════════════════════════════════════════════════════════════
 
 import pandas as pd
@@ -33,13 +30,7 @@ from tabulate import tabulate
 warnings.filterwarnings("ignore")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   OUTPUT FOLDERS
-#   These are the folders where everything gets saved to. There is
-#   one folder each for plots, per-ticker CSVs, and summary tables, all
-#   sitting inside the main results folder. They get created automatically
-#   if they don't exist yet so the script doesn't fail on a fresh run.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Output folders ────────────────────────────────────────────────────────
 
 OUTPUT_FOLDER     = "arima_results"
 PER_TICKER_FOLDER = os.path.join(OUTPUT_FOLDER, "per_ticker_results")
@@ -49,13 +40,7 @@ for folder in [OUTPUT_FOLDER, PER_TICKER_FOLDER, SUMMARY_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   TERMINAL OUTPUT LOGGING
-#   This saves everything that gets printed to the console into a text
-#   file at the same time, so I have a permanent record of every run.
-#   The Tee class writes to both the screen and the log file at once.
-#   At the very end of the script, stdout gets switched back to normal.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Terminal output logging ───────────────────────────────────────────────
 
 class Tee:
     def __init__(self, *files):
@@ -72,13 +57,7 @@ _real_stdout = sys.stdout
 sys.stdout   = Tee(_real_stdout, log_file)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#   DATE RANGE & SPLIT CONFIGURATION
-#   This sets the five year data window that all three models (ARIMA, RF,
-#   GRU) use, along with the 80/20 train/test split. Keeping everything
-#   the same across models means any difference in results is down to the
-#   model itself, not the data it was trained or tested on.
-# ══════════════════════════════════════════════════════════════════════════
+# ── Date range and split configuration ───────────────────────────────────
 
 TRAIN_RATIO = 0.80
 DATA_START, DATA_END = "2021-02-28", "2026-02-28"
@@ -86,14 +65,11 @@ DATA_START, DATA_END = "2021-02-28", "2026-02-28"
 
 # ══════════════════════════════════════════════════════════════════════════
 #   TICKERS & MODEL SETTINGS
-#   The three UK banking stocks I'm analysing, plus all the ARIMA settings.
-#   P_MAX and Q_MAX set how far the grid search goes when trying different
-#   model orders. VAL_SIZE is one quarter of trading days (63 trading days), 
-#   used to pick the best configuration before running the full test. 
-#   WALK_REFIT_FREQ controls how often the model gets retrained during
-#   walk-forward. WINDOW_SIZES lets the search also try limiting 
-#   how much history the model sees at each refit, rather than always using 
-#   all of it.
+#   P_MAX / Q_MAX control grid search depth. VAL_SIZE is one quarter
+#   (63 trading days) used to select the best order before the full test.
+#   WALK_REFIT_FREQ sets how often the model is retrained during
+#   walk-forward. WINDOW_SIZES lets the search try limiting how much
+#   history is used at each refit rather than always using all of it.
 # ══════════════════════════════════════════════════════════════════════════
 
 TICKERS      = ['BARC.L', 'LLOY.L', 'HSBA.L']
@@ -106,16 +82,11 @@ WALK_REFIT_FREQ = 63
 
 # ══════════════════════════════════════════════════════════════════════════
 #   HELPER FUNCTIONS
-#   A few utility functions used throughout the script.
-#   check_stationarity runs an ADF test and tries differencing up to twice
-#   if the series isn't stationary yet, returning the d value needed.
-#   diebold_mariano_test checks whether ARIMA is actually doing better than
-#   just guessing tomorrow will be the same as today (the naive baseline).
-#   winkler_score measures how good the prediction intervals are — it
-#   penalises both wide intervals and ones that miss the actual value.
-#   winkler_score_normalised is the same thing but divided by the average
-#   price, so I can fairly compare the three stocks against each other
-#   even though they trade at very different price levels.
+#   check_stationarity: ADF test, diffs up to twice if needed, returns d.
+#   diebold_mariano_test: checks whether ARIMA beats the naive RW baseline.
+#   winkler_score: interval quality — penalises wide intervals and misses.
+#   winkler_score_normalised: raw score divided by mean price for valid
+#   cross-ticker comparison (BARC ~452p, LLOY ~102p, HSBA ~1393p).
 # ══════════════════════════════════════════════════════════════════════════
 
 def check_stationarity(series, max_diff=2):
@@ -141,8 +112,7 @@ def diebold_mariano_test(errors1, errors2):
 
 
 def winkler_score(actual, lower, upper, alpha=0.05):
-    # Raw Winkler score in price units (GBX - Great British Pence). Use winkler_score_normalised
-    # for cross-ticker comparison — divides by mean actual price.
+    # Raw score in GBX — use winkler_score_normalised for cross-ticker comparison
     actual  = np.asarray(actual)
     lower   = np.asarray(lower)
     upper   = np.asarray(upper)
@@ -158,12 +128,9 @@ def winkler_score(actual, lower, upper, alpha=0.05):
 def winkler_score_normalised(actual, lower, upper, alpha=0.05):
     # ══════════════════════════════════════════════════════════════════════
     #   NORMALISED WINKLER SCORE
-    #   Divides the raw Winkler score by the mean actual price to produce
-    #   a scale-free metric expressed as a proportion of the average price.
-    #   This allows valid cross-ticker comparison between BARC (~452p),
-    #   LLOY (~102p), and HSBA (~1393p), which the raw score cannot support
-    #   because interval widths naturally scale with price level.
-    #   A lower normalised score still indicates better interval quality.
+    #   Raw score divided by mean actual price — gives a scale-free ratio
+    #   for cross-ticker comparison. Raw scores can't be compared directly
+    #   because interval widths scale with price level.
     #   Formula: Winkler_norm = Winkler_raw / mean(actual)
     # ══════════════════════════════════════════════════════════════════════
     raw_winkler = winkler_score(actual, lower, upper, alpha)
@@ -173,12 +140,9 @@ def winkler_score_normalised(actual, lower, upper, alpha=0.05):
 
 # ══════════════════════════════════════════════════════════════════════════
 #   MAIN ANALYSIS LOOP
-#   This is where everything actually runs. For each ticker, the script
-#   loads the data, checks stationarity, does the train/test split, runs
-#   a grid search to find the best ARIMA order, then does walk-forward
-#   validation to get realistic out-of-sample predictions. After that it
-#   calculates all the performance metrics, generates the plots, and
-#   produces the 5 day forecast. Results are saved as CSV files.
+#   Loads data, checks stationarity, splits train/test, runs grid search
+#   for best ARIMA order, runs walk-forward validation, calculates metrics,
+#   and produces the 5-day forecast. Results saved as CSVs per ticker.
 # ══════════════════════════════════════════════════════════════════════════
 
 print("\n" + "═"*100)
@@ -425,8 +389,8 @@ for ticker in TICKERS:
 
     # ══════════════════════════════════════════════════════════════════════
     #   SAVE PREDICTIONS TO CSV FOR CHART GENERATION
-    #   Saves the walk-forward predictions, actual prices, and prediction
-    #   intervals to a CSV file for use in the standalone chart script.
+    #   Walk-forward predictions, actual prices, and prediction intervals
+    #   saved for use in combined_charts.py
     # ══════════════════════════════════════════════════════════════════════
     pd.DataFrame({
         'Date':      test_dates,
@@ -459,17 +423,12 @@ for ticker in TICKERS:
     print(f"   Directional Accuracy:    {dir_accuracy:.2f}%")
 
     # ══════════════════════════════════════════════════════════════════════
-    #   UNCERTAINTY METRICS — RAW AND NORMALISED WINKLER SCORE
-    #
-    #   Two Winkler scores are now reported:
-    #     - Raw Winkler: in GBX price units, useful for within-ticker
-    #       comparison across models (ARIMA vs RF vs GRU for same stock).
-    #     - Normalised Winkler: raw score divided by mean actual price,
-    #       producing a ratio that enables valid cross-ticker comparison 
-    #       regardless of each stock's price level.
-    #       e.g. HSBA raw 105 vs LLOY raw 7.6 is misleading; normalised
-    #       scores account for HSBA trading approximately 13x higher than 
-    #       LLOY.
+    #   UNCERTAINTY METRICS
+    #   Two Winkler scores reported:
+    #     - Raw: GBX units, within-ticker comparison only
+    #     - Normalised: divided by mean price, valid cross-ticker comparison
+    #   RF and GRU use empirical residual-std intervals so comparison is
+    #   indicative only.
     # ══════════════════════════════════════════════════════════════════════
 
     interval_widths    = wf_ci_upper_prices - wf_ci_lower_prices
@@ -540,11 +499,7 @@ for ticker in TICKERS:
     ci_lower_prices     = last_actual * np.exp(cumulative_log_rets - 1.96 * sigma_1step * np.sqrt(horizons))
     ci_upper_prices     = last_actual * np.exp(cumulative_log_rets + 1.96 * sigma_1step * np.sqrt(horizons))
 
-
-    # The weighted average gives more importance to the nearer days since
-    # short-term forecasts from any model tend to be more reliable than
-    # longer ones. Day 1 gets 50% of the weight, day 2 gets 20%, and the
-    # remaining three days split the last 30% equally between them.
+    # Day 1 gets 50% weight, day 2 gets 20%, days 3-5 split the remaining 30%
     day_weights     = np.array([0.5, 0.2, 0.1, 0.1, 0.1])
     weighted_avg    = np.sum(forecast_prices * day_weights)
     weighted_signal = "UP" if weighted_avg > last_actual else "DOWN"
@@ -602,11 +557,8 @@ for ticker in TICKERS:
 
 # ══════════════════════════════════════════════════════════════════════════
 #   FINAL SUMMARY OUTPUTS
-#   Once all three tickers have been processed, this section pulls the
-#   results together into three summary tables and saves them as CSVs.
-#   One for overall model performance, one for the interval quality
-#   metrics, and one for the 5 day price forecasts. These are the files
-#   I use directly in the dissertation for cross-model comparison.
+#   Performance, uncertainty, and 5-day forecast results pulled together
+#   into summary CSVs for cross-model comparison in the dissertation.
 # ══════════════════════════════════════════════════════════════════════════
 
 print("\n" + "═"*100)
