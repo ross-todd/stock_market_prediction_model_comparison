@@ -114,6 +114,16 @@ Each model produces the same set of outputs so results are directly comparable.
 - Python 3.9 or higher
 - See `requirements.txt` for full list of dependencies
 
+## Pre-trained Models (Optional)
+
+The trained Random Forest and GRU models are not included in this repository due to file size constraints.
+
+They can be downloaded here:
+
+* [saved_models](https://caledonianac-my.sharepoint.com/:f:/g/personal/rtodd303_caledonian_ac_uk/IgAs84BaZv07RKhJjEWjjADJAS3Rb4HTriC91nE08D9eP6I?e=IDXicD)
+
+Once downloaded, place them in the `saved_models/` directory before running the random_forest_analysis.py, and teh gru_analysis.py files
+
 ---
 
 ## Evaluation Methodology
