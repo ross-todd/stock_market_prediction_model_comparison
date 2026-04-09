@@ -87,8 +87,6 @@ Each model produces the same set of outputs so results are directly comparable.
 **Per ticker:**
 
 - Actual vs predicted chart with 95% prediction interval
-- Residual autocorrelation plot
-- Feature importance plot (RF and GRU only)
 - Training history plot (GRU only)
 - 30-day history + 5-day forecast chart
 - Grid search results CSV
@@ -102,23 +100,19 @@ Each model produces the same set of outputs so results are directly comparable.
 - `*_uncertainty_metrics.csv` — coverage rate, interval width, Winkler score
 - `*_5day_forecasts_summary.csv` — 5-day forecasts with weighted average signals
 
+**Combined Charts**
+
+* Coverage
+* Forecasts
+* Out-Of-Sample MAPE Comparison
+* Prediction Uncertainty
+
 ---
 
 ## Requirements
 
 - Python 3.9 or higher
 - See `requirements.txt` for full list of dependencies
-
-Key packages:
-
-- `yfinance`
-- `pandas` / `numpy`
-- `scikit-learn`
-- `statsmodels`
-- `tensorflow`
-- `matplotlib` / `seaborn`
-- `joblib`
-- `tabulate`
 
 ---
 
