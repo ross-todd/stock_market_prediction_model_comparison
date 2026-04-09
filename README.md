@@ -23,9 +23,9 @@ ARIMA acts as the baseline. Random Forest and GRU are both benchmarked against i
 
 ```
 ├── data_loader.py          # Downloads and cleans OHLCV data from Yahoo Finance
-├── arima_model.py          # ARIMA walk-forward validation and 5-day forecast
-├── rf_model.py             # Random Forest walk-forward validation and 5-day forecast
-├── gru_model.py            # GRU walk-forward validation and 5-day forecast
+├── arima_analysis.py          # ARIMA walk-forward validation and 5-day forecast
+├── rf_analysis.py             # Random Forest walk-forward validation and 5-day forecast
+├── gru_analysis.py            # GRU walk-forward validation and 5-day forecast
 ├── arima_results/          # ARIMA output — plots, per-ticker CSVs, summary tables
 ├── rf_results/             # RF output — plots, per-ticker CSVs, summary tables
 ├── gru_results/            # GRU output — plots, per-ticker CSVs, summary tables
@@ -65,9 +65,9 @@ pip install -r requirements.txt
 Each model script runs independently. Run them in order if you want the saved models from RF and GRU to be available for the Streamlit application.
 
 ```bash
-python arima_model.py
-python rf_model.py
-python gru_model.py
+python arima_analysis.py
+python rf_analysis.py
+python gru_analysis.py
 ```
 
 Each script will:
@@ -75,7 +75,7 @@ Each script will:
 - Download data automatically via `data_loader.py`
 - Run a hyperparameter search to find the best configuration
 - Run walk-forward validation across the test set
-- Save all results, plots, and summary CSVs to the relevant results folder
+- Save all results and summary CSVs to the relevant results folder
 - Print everything to the terminal and save it to a `terminal_output.txt` log file
 
 ---
@@ -103,6 +103,10 @@ Each model produces the same set of outputs so results are directly comparable.
 - `*_5day_forecasts_summary.csv` — 5-day forecasts with weighted average signals
 
 ---
+
+## Running the combined_charts.py
+
+python combined_charts.py
 
 ## Requirements
 
